@@ -1,7 +1,5 @@
 # -*- Makefile -*-
 
-include /usr/include/gmsl
-
 CC        ?= gcc
 CXX       ?= g++
 CC_LINKER ?= $(CXX)
@@ -41,7 +39,7 @@ OBJECTS := $(SOURCES:.cpp=.o)
 
 # default targetname comes from the directory name
 ifeq (,$(TARGET_NAME))
-  TARGET_NAME := lib$(call tr,.,-,$(notdir $(abspath .)))
+  TARGET_NAME := lib$(shell echo $(notdir $(abspath .)) | tr . -)
 endif
 
 # if the TARGET_NAME is lib..., LIB_NAME is the same, otherwise prepend 'lib'
@@ -175,7 +173,7 @@ $(LIB_TARGET_SO): $(LIB_OBJECTS)
 
 # installation business
 
-PACKAGENAME_BASE = $(call tr,_,-,$(call lc,$(TARGET_NAME)))
+PACKAGENAME_BASE = $(shell echo $(TARGET_NAME) | tr A-Z_ a-z-)
 
 # 'make install' installs files for packaging, while 'make localinstall' dumps
 # them all together into a single directory. The only difference is the
