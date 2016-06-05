@@ -176,48 +176,56 @@ $(LIB_TARGET_SO): $(LIB_OBJECTS)
 # to lowercase, _ -> -
 PACKAGENAME_BASE = $(shell echo $(TARGET_NAME) | tr A-Z_ a-z-)
 
-# 'make install' installs files for packaging, while 'make localinstall' dumps
-# them all together into a single directory. The only difference is the
-# DESTDIR_DEV and DESTDIR_MAIN directories.
+# 'make install' logic:
+#   - if no DESTDIR set, then barf: 'make install' is for packaging only
+#   - if DESTDIR has "debian", split the install across debian packages
+#   - if DESTDIR has no "debian", just dump everything there
 
-ifneq ($(filter $(MAKECMDGOALS),install),)
-#{{{{{{{{{{{{{{ 'make install'
-  # If the TARGET_NAME starts with 'lib', it's a library. Otherwise it's
-  # binaries. Libraries have -dev versions of their packages, have ABI_VERSIONs,
-  # and are allowed to have headers, .so, .a, etc. For each library I have 3
-  # packages:
-  #
-  # liboblong-blahN    : main library, N is a number that gets bumped up with each API chage
-  # liboblong-blah-dev : devel files (.a, .h, .pc)
-  # liboblong-blahN-dbg: just the debug symbols
-
-  ifeq ($(TARGET_NAME:lib%=lib),lib)
-  #{{{{{{{{{{{{{{ library
-    PACKAGENAME      := $(PACKAGENAME_BASE)$(ABI_VERSION)
-    install: DESTDIR_DEV := debian/$(PACKAGENAME)-dev
-  #}}}}}}}}}}}}}}
-  else
-  #{{{{{{{{{{{{{{ binary package
-    PACKAGENAME      := $(PACKAGENAME_BASE)
-  #}}}}}}}}}}}}}}
+ifneq (,$(filter install,$(MAKECMDGOALS)))
+  ifeq  ($(strip $(DESTDIR)),)
+	  @echo Tried to make install without having DESTDIR defined
+	  @echo "make install" is ONLY for package building.
+	  @echo What are you trying to do?
+	  @false
   endif
 
-  install: DESTDIR_MAIN := debian/$(PACKAGENAME)
-  .PHONY: install
-#}}}}}}}}}}}}}} 'make install'
-else
-#{{{{{{{{{{{{{{ 'make localinstall'
+  ifneq (,$(findstring debian/,$(DESTDIR)))
+    # debian installation
 
-  PACKAGENAME := localinstall
+    # If the TARGET_NAME starts with 'lib', it's a library. Otherwise it's
+    # binaries. Libraries have -dev versions of their packages, have ABI_VERSIONs,
+    # and are allowed to have headers, .so, .a, etc. For each library I have 3
+    # packages:
+    #
+    # liboblong-blahN    : main library, N is a number that gets bumped up with each API chage
+    # liboblong-blah-dev : devel files (.a, .h, .pc)
+    # liboblong-blahN-dbg: just the debug symbols
 
-  localinstall: DESTDIR_DEV  := $(or $(DESTDIR),localinstall)
-  localinstall: DESTDIR_MAIN := $(or $(DESTDIR),localinstall)
+    ifeq ($(TARGET_NAME:lib%=lib),lib)
+      # library
+      PACKAGENAME      := $(PACKAGENAME_BASE)$(ABI_VERSION)
+      DESTDIR_DEV := debian/$(PACKAGENAME)-dev
+    else
+      # binary package
+      PACKAGENAME      := $(PACKAGENAME_BASE)
+    endif
 
-  localinstall: install
-  .PHONY: localinstall
-#}}}}}}}}}}}}}} 'make localinstall'
+    DESTDIR_MAIN := debian/$(PACKAGENAME)
+
+    # debian does /usr/lib/arch-specific-stuff
+    USRLIB := /usr/lib
+
+  else
+    # non-debian installation. Just dump into $(DESTDIR)
+
+    DESTDIR_DEV  := $(DESTDIR)
+    DESTDIR_MAIN := $(DESTDIR)
+
+    # redhat does /usr/lib64 for x86-64. Don't know about other arches
+    USRLIB := /usr/lib64
+  endif
+
 endif
-
 
 .PHONY: install
 
@@ -230,24 +238,15 @@ endif
 # using 'cp -P' instead of 'install' because the latter follows links unconditionally
 install: $(LIB_TARGET_A) $(LIB_TARGET_SO) $(LIB_TARGET_SO_BARE) $(LIB_TARGET_SO_BARE).$(ABI_VERSION) $(BIN_TARGETS)
 
-# must have DESTDIR if we're doing an "install"
-ifneq ($(filter $(MAKECMDGOALS),install),)
-ifeq  ($(strip $(DESTDIR)),)
-	@echo Tried to make install without having DESTDIR defined
-	@echo "make install" is ONLY for the debian package.
-	@echo What are you trying to do?
-	@false
-endif
-endif
 ifneq ($(LIB_OBJECTS),) # install non-dev library (can be in a non-lib project)
-	mkdir -p $(DESTDIR_MAIN)/usr/lib
-	cp -P $(LIB_TARGET_SO)  $(DESTDIR_MAIN)/usr/lib
-	ln -fs $(notdir $(LIB_TARGET_SO)) $(DESTDIR_MAIN)/usr/lib/$(notdir $(LIB_TARGET_SO_BARE)).$(ABI_VERSION)
+	mkdir -p $(DESTDIR_MAIN)/$(USRLIB)
+	cp -P $(LIB_TARGET_SO)  $(DESTDIR_MAIN)/$(USRLIB)
+	ln -fs $(notdir $(LIB_TARGET_SO)) $(DESTDIR_MAIN)/$(USRLIB)/$(notdir $(LIB_TARGET_SO_BARE)).$(ABI_VERSION)
 endif
 ifeq ($(TARGET_NAME:lib%=lib),lib) # install dev library (MUST be in a lib project)
-	mkdir -p $(DESTDIR_DEV)/usr/lib/$(REPO_NAME_ABI_VERSIONED)
-	cp -P $(LIB_TARGET_A)   $(DESTDIR_DEV)/usr/lib/$(REPO_NAME_ABI_VERSIONED)
-	ln -fs $(notdir $(LIB_TARGET_SO)) $(DESTDIR_DEV)/usr/lib/$(REPO_NAME_ABI_VERSIONED)/$(notdir $(LIB_TARGET_SO_BARE))
+	mkdir -p $(DESTDIR_DEV)/$(USRLIB)/$(REPO_NAME_ABI_VERSIONED)
+	cp -P $(LIB_TARGET_A)   $(DESTDIR_DEV)/$(USRLIB)/$(REPO_NAME_ABI_VERSIONED)
+	ln -fs $(notdir $(LIB_TARGET_SO)) $(DESTDIR_DEV)/$(USRLIB)/$(REPO_NAME_ABI_VERSIONED)/$(notdir $(LIB_TARGET_SO_BARE))
 endif
 ifneq ($(strip $(DIST_BINS)),)
 
