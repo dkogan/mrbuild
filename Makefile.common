@@ -99,7 +99,7 @@ $(LIB_TARGET_A): $(LIB_OBJECTS)
 	ar rcv $@ $^
 
 
-all: $(LIB_TARGET_SO) $(BIN_TARGETS)
+all: $(LIB_TARGET_SO) $(LIB_TARGET_A) $(BIN_TARGETS)
 .PHONY: all
 .DEFAULT_GOAL := all
 
@@ -173,6 +173,7 @@ $(LIB_TARGET_SO): $(LIB_OBJECTS)
 
 # installation business
 
+# to lowercase, _ -> -
 PACKAGENAME_BASE = $(shell echo $(TARGET_NAME) | tr A-Z_ a-z-)
 
 # 'make install' installs files for packaging, while 'make localinstall' dumps
