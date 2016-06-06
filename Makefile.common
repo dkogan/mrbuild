@@ -39,7 +39,9 @@ OBJECTS := $(SOURCES:.cpp=.o)
 
 # default targetname comes from the directory name
 ifeq (,$(TARGET_NAME))
-  TARGET_NAME := lib$(shell echo $(notdir $(abspath .)) | tr . -)
+  $(error User MUST specify the TARGET_NAME. I do not know \
+how to infer that from the directory, and work for debian \
+AND redhat both in-tree AND from a tarball)
 endif
 
 # if the TARGET_NAME is lib..., LIB_NAME is the same, otherwise prepend 'lib'
@@ -197,32 +199,35 @@ ifneq (,$(filter install,$(MAKECMDGOALS)))
     # and are allowed to have headers, .so, .a, etc. For each library I have 3
     # packages:
     #
-    # liboblong-blahN    : main library, N is a number that gets bumped up with each API chage
-    # liboblong-blah-dev : devel files (.a, .h, .pc)
-    # liboblong-blahN-dbg: just the debug symbols
+    # libblahN    : main library, N is a number that gets bumped up with each API chage
+    # libblah-dev : devel files (.a, .h, .pc)
+    # libblahN-dbg: just the debug symbols
 
     ifeq ($(TARGET_NAME:lib%=lib),lib)
       # library
-      PACKAGENAME      := $(PACKAGENAME_BASE)$(ABI_VERSION)
-      DESTDIR_DEV := debian/$(PACKAGENAME)-dev
+      PACKAGENAME   := $(PACKAGENAME_BASE)$(ABI_VERSION)
+      DESTDIR_DEV   := debian/$(PACKAGENAME)-dev
+      DESTDIR_TOOLS := debian/$(PACKAGENAME)-tools
     else
       # binary package
-      PACKAGENAME      := $(PACKAGENAME_BASE)
+      PACKAGENAME   := $(PACKAGENAME_BASE)
+      DESTDIR_TOOLS := debian/$(PACKAGENAME)
     endif
 
-    DESTDIR_MAIN := debian/$(PACKAGENAME)
+    DESTDIR_MAIN  := debian/$(PACKAGENAME)
 
     # debian does /usr/lib/arch-specific-stuff
-    USRLIB := /usr/lib
+    USRLIB := usr/lib
 
   else
     # non-debian installation. Just dump into $(DESTDIR)
 
-    DESTDIR_DEV  := $(DESTDIR)
-    DESTDIR_MAIN := $(DESTDIR)
+    DESTDIR_DEV   := $(DESTDIR)
+    DESTDIR_MAIN  := $(DESTDIR)
+    DESTDIR_TOOLS := $(DESTDIR)
 
     # redhat does /usr/lib64 for x86-64. Don't know about other arches
-    USRLIB := /usr/lib64
+    USRLIB := usr/lib64
   endif
 
 endif
@@ -248,10 +253,10 @@ ifeq ($(TARGET_NAME:lib%=lib),lib) # install dev library (MUST be in a lib proje
 	cp -P $(LIB_TARGET_A)   $(DESTDIR_DEV)/$(USRLIB)/$(REPO_NAME_ABI_VERSIONED)
 	ln -fs $(notdir $(LIB_TARGET_SO)) $(DESTDIR_DEV)/$(USRLIB)/$(REPO_NAME_ABI_VERSIONED)/$(notdir $(LIB_TARGET_SO_BARE))
 endif
-ifneq ($(strip $(DIST_BINS)),)
+ifneq ($(strip $(BIN_TARGETS)),)
 
-	mkdir -p $(DESTDIR_MAIN)/usr/bin
-	install -m 0755 $(DIST_BINS) $(DESTDIR_MAIN)/usr/bin/
+	mkdir -p $(DESTDIR_TOOLS)/usr/bin
+	install -m 0755 $(BIN_TARGETS) $(DESTDIR_TOOLS)/usr/bin/
 endif
 	mkdir -p $(DESTDIR_DEV)/usr/include
 	cp -r include/* $(DESTDIR_DEV)/usr/include
