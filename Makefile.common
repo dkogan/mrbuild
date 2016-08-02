@@ -11,7 +11,7 @@
 #    LIB_SOURCES := Gltk_Fl_Window.cc gltk.c gltk_control.c gltk_plot.c gltk_test_cmdline.c
 #    BIN_SOURCES := gltk_test.cc
 #
-#    CCXXFLAGS += $(foreach s,parameter variable but-set-variable,-Wno-unused-$s)
+#    CCXXFLAGS += -Wno-unused-parameter -Wno-unused-variable -Wno-unused-but-set-variable
 #
 #    LDLIBS := -lfltk -lfltk_gl -lGL -lGLU -lglut
 #
