@@ -40,16 +40,15 @@
 #     TAIL_VERSION  An arbitrary string. The full version is
 #                   ABI_VERSION.TAIL_VERSION
 #
-# Either of these two MUST be defined:
+# Variables that MAY be defined:
 #
-#     LIB_SOURCES   Sources to build into a library
+#     LIB_SOURCES   Sources to build into a library. If undefined, all C and C++
+#                   sources in src/ are taken
 #
 #     BIN_SOURCES   Sources to build into executables. By default each executable
 #                   will be built from the library and each source in
-#                   BIN_SOURCES. To do anything else, tell Make about it the
-#                   usual way.
-#
-# Variables that MAY be defined:
+#                   BIN_SOURCES. If undefined, all C and C++ sources in bin/ are
+#                   taken
 #
 #     CFLAGS	    Flags for C, C++, the preprocessor and both respectively. By
 #     CXXFLAGS	    default we pass -O3 and (for C++) -std=c++0x. If we specify
@@ -74,9 +73,7 @@
 
 # Make sure I have the variables that must be defined
 MUST_DEF_VARIABLES        := PROJECT_NAME ABI_VERSION TAIL_VERSION
-MUST_DEF_VARIABLES_EITHER := LIB_SOURCES BIN_SOURCES
 $(foreach v,$(MUST_DEF_VARIABLES),$(if $($v),,$(error User MUST specify $v)))
-$(if $(strip $(foreach v,$(MUST_DEF_VARIABLES_EITHER),${$v})),,$(error User MUST specify at least one of ${MUST_DEF_VARIABLES_EITHER}))
 
 
 
@@ -245,16 +242,16 @@ DESTDIR_TOOLS := $(DESTDIR)
 USRLIB := usr/lib64
 
 # using 'cp -P' instead of 'install' because the latter follows links unconditionally
-install: $(LIB_TARGET_A) $(LIB_TARGET_SO) $(LIB_TARGET_SO_BARE) $(LIB_TARGET_SO_BARE).$(ABI_VERSION) $(BIN_TARGETS)
+install: $(LIB_TARGET_SO) $(LIB_TARGET_SO_BARE) $(LIB_TARGET_SO_BARE).$(ABI_VERSION) $(BIN_TARGETS)
 
-ifneq ($(LIB_OBJECTS),) # install non-dev library (can be in a non-lib project)
+ifneq ($(strip $(LIB_OBJECTS)),) # install non-dev library (can be in a non-lib project)
 	mkdir -p $(DESTDIR_MAIN)/$(USRLIB)
 	cp -P $(LIB_TARGET_SO)  $(DESTDIR_MAIN)/$(USRLIB)
 	ln -fs $(notdir $(LIB_TARGET_SO)) $(DESTDIR_MAIN)/$(USRLIB)/$(notdir $(LIB_TARGET_SO_BARE)).$(ABI_VERSION)
 endif
-ifeq ($(PROJECT_NAME:lib%=lib),lib) # install dev library (MUST be in a lib project)
+ifneq ($(strip $(LIB_SOURCES)),) # install dev library (MUST be in a lib project)
 	mkdir -p $(DESTDIR_DEV)/$(USRLIB)
-	cp -P $(LIB_TARGET_A)   $(DESTDIR_DEV)/$(USRLIB)
+	$(if $(wildcard $(LIB_TARGET_A)),cp -P $(LIB_TARGET_A)   $(DESTDIR_DEV)/$(USRLIB))
 	ln -fs $(notdir $(LIB_TARGET_SO)) $(DESTDIR_DEV)/$(USRLIB)/$(notdir $(LIB_TARGET_SO_BARE))
 endif
 ifneq ($(strip $(DIST_BIN)),)
@@ -263,8 +260,8 @@ ifneq ($(strip $(DIST_BIN)),)
 	chrpath -d $(DESTDIR_TOOLS)/usr/bin/*
 endif
 ifneq ($(strip $(DIST_INCLUDE)),)
-	mkdir -p $(DESTDIR_DEV)/usr/include
-	cp -r $(DIST_INCLUDE) $(DESTDIR_DEV)/usr/include
+	mkdir -p $(DESTDIR_DEV)/usr/include/$(PROJECT_NAME)
+	cp -r $(DIST_INCLUDE) $(DESTDIR_DEV)/usr/include/$(PROJECT_NAME)
 endif
 .PHONY: install
 
@@ -275,3 +272,4 @@ endif
 
 # the header dependencies
 -include *.d
+
