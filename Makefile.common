@@ -35,10 +35,14 @@
 #                   prepended to the SONAME if it's missing
 #
 #     ABI_VERSION   An integer indicating the version of the ABI. Usually the
-#                   same as the major version number of the project
+#                   same as the major version number of the project. Together
+#                   with TAIL_VERSION, these define
+#                     VERSION := $(ABI_VERSION).$(TAIL_VERSION)
+#                   which can be used in the per-project Makefile
 #
-#     TAIL_VERSION  An arbitrary string. The full version is
-#                   ABI_VERSION.TAIL_VERSION
+#     TAIL_VERSION An arbitrary string. Together with TAIL_VERSION, these define
+#                     VERSION := $(ABI_VERSION).$(TAIL_VERSION)
+#                   which can be used in the per-project Makefile
 #
 # Variables that MAY be defined:
 #
