@@ -36,16 +36,24 @@
 #
 #     ABI_VERSION   An integer indicating the version of the ABI. Usually the
 #                   same as the major version number of the project. Together
-#                   with TAIL_VERSION, these define
-#                     VERSION := $(ABI_VERSION).$(TAIL_VERSION)
+#                   with TAIL_VERSION, these define the default
+#                     VERSION ?= $(ABI_VERSION).$(TAIL_VERSION)
 #                   which can be used in the per-project Makefile
 #
-#     TAIL_VERSION An arbitrary string. Together with TAIL_VERSION, these define
-#                     VERSION := $(ABI_VERSION).$(TAIL_VERSION)
+#     TAIL_VERSION  An arbitrary string. Together with TAIL_VERSION, these
+#                   define the default
+#                       VERSION ?= $(ABI_VERSION).$(TAIL_VERSION)
 #                   which can be used in the per-project Makefile
+#
 #
 # Variables that MAY be defined:
 #
+#     VERSION       A version string is always passed as a #define to the
+#                   compiler, to all documentation generators (gengetopt and
+#                   such). The project Makefile can set this to whatever they
+#                   like. If omitted, it defaults to
+#                       VERSION ?= $(ABI_VERSION).$(TAIL_VERSION)
+
 #     LIB_SOURCES   Sources to build into a library. If undefined, all C and C++
 #                   sources in src/ are taken
 #
@@ -104,7 +112,10 @@ $(foreach v,$(MUST_DEF_VARIABLES),$(if $($v),,$(error User MUST specify $v)))
 
 
 
-VERSION := $(ABI_VERSION).$(TAIL_VERSION)
+# The default VERSION string that appears as a #define to each source file, and
+# to any generated documentation (gengetopt and so on). The user can set this to
+# whatever they like
+VERSION ?= $(ABI_VERSION).$(TAIL_VERSION)
 
 # Default compilers. By default, we use g++ as a linker
 CC        ?= gcc
@@ -139,7 +150,7 @@ BIN_OBJECTS := $(addsuffix .o,$(basename $(BIN_SOURCES)))
 # if the PROJECT_NAME is xxx    then LIB_NAME is libxxx
 LIB_NAME           := $(or $(filter lib%,$(PROJECT_NAME)),lib$(PROJECT_NAME))
 LIB_TARGET_SO_BARE := $(LIB_NAME).so
-LIB_TARGET_SO	   := $(LIB_TARGET_SO_BARE).$(VERSION)
+LIB_TARGET_SO	   := $(LIB_TARGET_SO_BARE).$(ABI_VERSION).$(TAIL_VERSION)
 
 BIN_TARGETS := $(basename $(BIN_SOURCES))
 
