@@ -187,8 +187,8 @@ endef
 # define the compile rules. I need to redefine the rules here because my
 # C..FLAGS variables are simple (immediately evaluated), but the user
 # could have specified per-target flags that ALWAYS evaluate deferred-ly
-cc_build_rule = $(CXX) $(call massageopts_cxx,$(CXXFLAGS) $(CCXXFLAGS) $(CPPFLAGS)) -c -o $@ $<
-c_build_rule  = $(CC)  $(call massageopts_c,  $(CFLAGS)   $(CCXXFLAGS) $(CPPFLAGS)) -c -o $@ $<
+cc_build_rule = $(strip $(CXX) $(call massageopts_cxx,$(CXXFLAGS) $(CCXXFLAGS) $(CPPFLAGS))) -c -o $@ $<
+c_build_rule  = $(strip $(CC)  $(call massageopts_c,  $(CFLAGS)   $(CCXXFLAGS) $(CPPFLAGS))) -c -o $@ $<
 
 
 %.o:%.C
