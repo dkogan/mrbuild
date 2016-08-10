@@ -160,6 +160,8 @@ BIN_TARGETS := $(basename $(BIN_SOURCES))
 # statically, but this will have to do for now
 $(LIB_OBJECTS): CCXXFLAGS += -fPIC
 
+CCXXFLAGS += -DVERSION='"$(VERSION)"'
+
 
 
 
@@ -203,10 +205,6 @@ c_build_rule  = $(CC)  $(call massageopts_c,  $(CFLAGS)   $(CCXXFLAGS) $(CPPFLAG
 # We like to gengetopt things, and this rules does it
 %.h %.c: %.ggo
 	gengetopt -C -u -g $(VERSION) -i $< -F $* args -f $* -a $*
-ALLGGO := $(wildcard *.ggo)
-ifneq (,$(ALLGGO))
-$(patsubst %.ggo,%.o,$(ALLGGO)): CCXXFLAGS += -DVERSION='"$(VERSION)"'
-endif
 
 
 
