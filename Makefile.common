@@ -71,6 +71,29 @@
 #     DIST_BIN_EXCEPT   Distribution blacklists. May include wildcards.
 #     DIST_INCLUDE_EXCEPT
 #
+#     DIST_DOC      Documentation we ship. May include wildcards.
+#
+#     DIST_MAN      Man-pages we ship. May include wildcards.
+#
+#     DIST_BIN_EXCEPT_FINDSPEC
+#     DIST_INCLUDE_EXCEPT_FINDSPEC
+#     DIST_DOC_EXCEPT_FINDSPEC
+#     DIST_MAN_EXCEPT_FINDSPEC
+#                   After we install a set of files to the DESTDIR, we may want
+#                   to delete some subset of them. This is similar to the
+#                   _EXCEPT blacklists above, but accomplished with the 'find'
+#                   utility, so we have more flexibility. For instance, to
+#                   install all the manpages except onces for tests, do this:
+#
+#                     DIST_MAN                 := doxygen-doc/man/man3
+#                     DIST_MAN_EXCEPT_FINDSPEC := -type f -name '*_test.3'
+#
+#                   To install only the manpage for the frobnicator utility
+#                   (delete all others) we do this:
+#
+#                     DIST_MAN                 := doxygen-doc/man/man3
+#                     DIST_MAN_EXCEPT_FINDSPEC := -type f \! \( -name 'frobnicator.3' \)
+#
 #     EXTRA_CLEAN   Additional target to clean out during a 'make clean'
 
 
@@ -234,34 +257,36 @@ DIST_INCLUDE := $(filter-out $(wildcard $(DIST_INCLUDE_EXCEPT)), \
                   $(or $(DIST_INCLUDE),$(wildcard                      *.h *.hh *.hpp *.H) \
                                        $(wildcard $(addprefix include/,*.h *.hh *.hpp *.H))))
 
-DESTDIR_DEV   := $(DESTDIR)
-DESTDIR_MAIN  := $(DESTDIR)
-DESTDIR_TOOLS := $(DESTDIR)
-
 # assuming redhat only for the time being
 USRLIB := usr/lib64
 
-# using 'cp -P' instead of 'install' because the latter follows links unconditionally
-install: $(LIB_TARGET_SO) $(LIB_TARGET_SO_BARE) $(LIB_TARGET_SO_BARE).$(ABI_VERSION) $(BIN_TARGETS)
+# Generates the install rules. Arguments:
+#   1. variable containing the being installed
+#   2. target path they're being installed to
+#   3. post-install commands
+define install_rule
+$(if $(strip $($1)),
+	mkdir -p $2 &&									\
+	cp -r $($1) $2 &&								\
+	$(if $($(1)_EXCEPT_FINDSPEC),find $2 $($(1)_EXCEPT_FINDSPEC) -delete &&)	\
+	$(or $3,true) )
+endef
 
-ifneq ($(strip $(LIB_OBJECTS)),) # install non-dev library (can be in a non-lib project)
-	mkdir -p $(DESTDIR_MAIN)/$(USRLIB)
-	cp -P $(LIB_TARGET_SO)  $(DESTDIR_MAIN)/$(USRLIB)
-	ln -fs $(notdir $(LIB_TARGET_SO)) $(DESTDIR_MAIN)/$(USRLIB)/$(notdir $(LIB_TARGET_SO_BARE)).$(ABI_VERSION)
+install: $(LIB_TARGET_SO) $(LIB_TARGET_SO_BARE) $(LIB_TARGET_SO_BARE).$(ABI_VERSION) $(BIN_TARGETS) \
+         $(DIST_DOC) $(DIST_MAN)
+
+# using 'cp -P' instead of 'install' because the latter follows links unconditionally
+ifneq ($(strip $(LIB_SOURCES)),)
+	mkdir -p $(DESTDIR)/$(USRLIB)
+	cp -P $(LIB_TARGET_SO)  $(DESTDIR)/$(USRLIB)
+	ln -fs $(notdir $(LIB_TARGET_SO)) $(DESTDIR)/$(USRLIB)/$(notdir $(LIB_TARGET_SO_BARE)).$(ABI_VERSION)
+	ln -fs $(notdir $(LIB_TARGET_SO)) $(DESTDIR)/$(USRLIB)/$(notdir $(LIB_TARGET_SO_BARE))
 endif
-ifneq ($(strip $(LIB_SOURCES)),) # install dev library (MUST be in a lib project)
-	mkdir -p $(DESTDIR_DEV)/$(USRLIB)
-	ln -fs $(notdir $(LIB_TARGET_SO)) $(DESTDIR_DEV)/$(USRLIB)/$(notdir $(LIB_TARGET_SO_BARE))
-endif
-ifneq ($(strip $(DIST_BIN)),)
-	mkdir -p $(DESTDIR_TOOLS)/usr/bin
-	install -m 0755 $(DIST_BIN) $(DESTDIR_TOOLS)/usr/bin/
-	chrpath -d $(DESTDIR_TOOLS)/usr/bin/*
-endif
-ifneq ($(strip $(DIST_INCLUDE)),)
-	mkdir -p $(DESTDIR_DEV)/usr/include/$(PROJECT_NAME)
-	cp -r $(DIST_INCLUDE) $(DESTDIR_DEV)/usr/include/$(PROJECT_NAME)
-endif
+
+	$(call install_rule,DIST_BIN,     $(DESTDIR)/usr/bin,chmod 0755 $(DESTDIR)/usr/bin/* && chrpath -d $(DESTDIR)/usr/bin/*)
+	$(call install_rule,DIST_INCLUDE, $(DESTDIR)/usr/include/$(PROJECT_NAME),)
+	$(call install_rule,DIST_DOC,     $(DESTDIR)/usr/share/doc/$(PROJECT_NAME),)
+	$(call install_rule,DIST_MAN,     $(DESTDIR)/usr/share/man,)
 .PHONY: install
 
 
