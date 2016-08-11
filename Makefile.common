@@ -145,6 +145,7 @@ BIN_SOURCES ?= $(wildcard $(addprefix bin/*.,cpp cc C c cxx))
 LIB_OBJECTS := $(addsuffix .o,$(basename $(LIB_SOURCES)))
 BIN_OBJECTS := $(addsuffix .o,$(basename $(BIN_SOURCES)))
 
+SOURCE_DIRS := $(sort ./ $(dir $(LIB_SOURCES) $(BIN_SOURCES)))
 
 # if the PROJECT_NAME is libxxx then LIB_NAME is libxxx
 # if the PROJECT_NAME is xxx    then LIB_NAME is libxxx
@@ -241,7 +242,7 @@ $(BIN_TARGETS): LDFLAGS += -Wl,-rpath=$(abspath .)
 
 
 clean:
-	rm -rf pod2htmi.tmp pod2htmd.tmp *.1 *-man.html *.a *.o *.so *.so.* *.d $(LIB_OBJECTS) $(BIN_OBJECTS) $(BIN_TARGETS) $(foreach s,.c .h,$(addsuffix $s,$(basename $(wildcard *.ggo)))) $(EXTRA_CLEAN)
+	rm -rf $(foreach d,$(SOURCE_DIRS),$(addprefix $d,*.a *.o *.so *.so.* *.d)) $(BIN_TARGETS) $(foreach s,.c .h,$(addsuffix $s,$(basename $(shell find . -name *.ggo)))) $(EXTRA_CLEAN)
 distclean: clean
 
 .PHONY: distclean clean
@@ -303,4 +304,4 @@ endif
 .SECONDARY:
 
 # the header dependencies
--include $(addsuffix *.d,$(sort $(dir $(LIB_SOURCES) $(BIN_SOURCES))))
+-include $(addsuffix *.d,$(SOURCE_DIRS))
