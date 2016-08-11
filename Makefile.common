@@ -241,7 +241,7 @@ $(BIN_TARGETS): LDFLAGS += -Wl,-rpath=$(abspath .)
 
 
 clean:
-	rm -rf pod2htmi.tmp pod2htmd.tmp *.1 *-man.html *.a *.o *.so *.so.* *.d $(BIN_TARGETS) $(foreach s,.c .h,$(addsuffix $s,$(basename $(wildcard *.ggo)))) $(EXTRA_CLEAN)
+	rm -rf pod2htmi.tmp pod2htmd.tmp *.1 *-man.html *.a *.o *.so *.so.* *.d $(LIB_OBJECTS) $(BIN_OBJECTS) $(BIN_TARGETS) $(foreach s,.c .h,$(addsuffix $s,$(basename $(wildcard *.ggo)))) $(EXTRA_CLEAN)
 distclean: clean
 
 .PHONY: distclean clean
