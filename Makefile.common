@@ -83,10 +83,13 @@
 #
 #     DIST_MAN      Man-pages we ship. May include wildcards.
 #
+#     DIST_DATA     Arbitrary data we ship. May include wildcards.
+#
 #     DIST_BIN_EXCEPT_FINDSPEC
 #     DIST_INCLUDE_EXCEPT_FINDSPEC
 #     DIST_DOC_EXCEPT_FINDSPEC
 #     DIST_MAN_EXCEPT_FINDSPEC
+#     DIST_DATA_EXCEPT_FINDSPEC
 #                   After we install a set of files to the DESTDIR, we may want
 #                   to delete some subset of them. This is similar to the
 #                   _EXCEPT blacklists above, but accomplished with the 'find'
@@ -290,7 +293,7 @@ $(if $(strip $($1)),
 endef
 
 install: $(LIB_TARGET_SO) $(LIB_TARGET_SO_BARE) $(LIB_TARGET_SO_BARE).$(ABI_VERSION) $(BIN_TARGETS) \
-         $(DIST_DOC) $(DIST_MAN)
+         $(DIST_DOC) $(DIST_MAN) $(DIST_DATA)
 
 # using 'cp -P' instead of 'install' because the latter follows links unconditionally
 ifneq ($(strip $(LIB_SOURCES)),)
@@ -304,6 +307,7 @@ endif
 	$(call install_rule,DIST_INCLUDE, $(DESTDIR)/usr/include/$(PROJECT_NAME),)
 	$(call install_rule,DIST_DOC,     $(DESTDIR)/usr/share/doc/$(PROJECT_NAME),)
 	$(call install_rule,DIST_MAN,     $(DESTDIR)/usr/share/man,)
+	$(call install_rule,DIST_DATA,    $(DESTDIR)/usr/share/$(PROJECT_NAME),)
 .PHONY: install
 
 
