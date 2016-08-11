@@ -205,7 +205,7 @@ c_build_rule  = $(strip $(CC)  $(call massageopts_c,  $(CFLAGS)   $(CCXXFLAGS) $
 
 # We like to gengetopt things, and this rules does it
 %.h %.c: %.ggo
-	gengetopt -C -u -g $(VERSION) -i $< -F $* args -f $* -a $*
+	gengetopt -C -u -g $(VERSION) -i $< -F $* args -f $(notdir $*) -a $(notdir $*)
 
 
 
