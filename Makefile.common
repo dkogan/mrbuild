@@ -241,13 +241,13 @@ $(LIB_TARGET_SO): $(LIB_OBJECTS)
 	ln -fs $(notdir $@) $(LIB_TARGET_SO_BARE).$(ABI_VERSION)
 
 # I make sure to give the .o to the linker before the .so and everything else.
-# The .o may depend on the other stuff.
+# The .o may depend on the other stuff. The binaries get an rpath (removed at
+# install time)
 $(BIN_TARGETS): %: %.o
-	$(CC_LINKER) $(LDFLAGS) $(filter %.o, $^) $(filter-out %.o, $^) $(LDLIBS) -o $@
+	$(CC_LINKER) -Wl,-rpath=$(abspath .) $(LDFLAGS) $(filter %.o, $^) $(filter-out %.o, $^) $(LDLIBS) -o $@
 
-# The binaries link with the DSO, and get an rpath (removed at install time)
+# The binaries link with the DSO
 $(BIN_TARGETS): $(LIB_TARGET_SO)
-$(BIN_TARGETS): LDFLAGS += -Wl,-rpath=$(abspath .)
 
 
 
