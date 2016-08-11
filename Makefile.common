@@ -303,5 +303,4 @@ endif
 .SECONDARY:
 
 # the header dependencies
--include *.d
-
+-include $(addsuffix *.d,$(sort $(dir $(LIB_SOURCES) $(BIN_SOURCES))))
