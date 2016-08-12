@@ -55,12 +55,12 @@
 #                       VERSION ?= $(ABI_VERSION).$(TAIL_VERSION)
 
 #     LIB_SOURCES   Sources to build into a library. If undefined, all C and C++
-#                   sources in src/ are taken
+#                   sources in src/ are taken. May contain wildcards.
 #
 #     BIN_SOURCES   Sources to build into executables. By default each executable
 #                   will be built from the library and each source in
 #                   BIN_SOURCES. If undefined, all C and C++ sources in bin/ are
-#                   taken
+#                   taken. May contain wildcards..
 #
 #     CFLAGS	    Flags for C, C++, the preprocessor and both respectively. By
 #     CXXFLAGS	    default we pass -O3 and (for C++) -std=c++0x. If we specify
@@ -146,8 +146,11 @@ CCXXFLAGS += -Iinclude
 # all warnings by default
 CCXXFLAGS += -Wall -Wextra
 
-LIB_SOURCES ?= $(wildcard $(addprefix src/*.,cpp cc C c cxx))
-BIN_SOURCES ?= $(wildcard $(addprefix bin/*.,cpp cc C c cxx))
+LIB_SOURCES ?= $(addprefix src/*.,cpp cc C c cxx)
+BIN_SOURCES ?= $(addprefix bin/*.,cpp cc C c cxx)
+LIB_SOURCES := $(wildcard $(LIB_SOURCES))
+BIN_SOURCES := $(wildcard $(BIN_SOURCES))
+
 LIB_OBJECTS := $(addsuffix .o,$(basename $(LIB_SOURCES)))
 BIN_OBJECTS := $(addsuffix .o,$(basename $(BIN_SOURCES)))
 
