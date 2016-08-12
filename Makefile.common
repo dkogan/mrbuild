@@ -79,8 +79,9 @@
 #     DIST_INCLUDE  Headers that we distribute. May include wildcards.. If omitted,
 #                   defaults to all headers in . and include/
 #
-#     DIST_BIN_EXCEPT   Distribution blacklists. May include wildcards.
-#     DIST_INCLUDE_EXCEPT
+#     DIST_BIN_EXCEPT      Simple distribution blacklists. May include wildcards. For
+#     DIST_INCLUDE_EXCEPT  anything fancier, use the ..._FINDSPEC variables described
+#                          below
 #
 #     DIST_DOC      Documentation we ship. May include wildcards.
 #
@@ -277,11 +278,12 @@ What are you trying to do?)
 endif
 
 
-DIST_BIN     := $(filter-out $(wildcard $(DIST_BIN_EXCEPT)), \
-                  $(or $(DIST_BIN),    $(BIN_TARGETS)))
-DIST_INCLUDE := $(filter-out $(wildcard $(DIST_INCLUDE_EXCEPT)), \
-                  $(or $(DIST_INCLUDE),$(wildcard                      *.h *.hh *.hpp *.H) \
-                                       $(wildcard $(addprefix include/,*.h *.hh *.hpp *.H))))
+DIST_BIN     := $(filter-out $(wildcard $(DIST_BIN_EXCEPT)),		\
+                  $(wildcard $(or $(DIST_BIN),    $(BIN_TARGETS))))
+DIST_INCLUDE := $(filter-out $(wildcard $(DIST_INCLUDE_EXCEPT)),		\
+		  $(wildcard $(or $(DIST_INCLUDE),				\
+                                  $(addprefix include/,*.h *.hh *.hpp *.H)	\
+                                              *.h *.hh *.hpp *.H)))
 
 # assuming redhat only for the time being
 USRLIB := usr/lib64
