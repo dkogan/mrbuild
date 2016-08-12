@@ -73,8 +73,11 @@
 #     LDLIBS        Similar to the above. The libraries we link with. By default this
 #                   applies to all objects, libraries and executables we build
 #
-#     DIST_BIN      Executables and headers (respectively) that we distribute. May
-#     DIST_INCLUDE  include wildcards.
+#     DIST_BIN      Executables that we distribute. May include wildcards. If omitted,
+#                   defaults to all the executables $(BIN_SOURCES) produce
+#
+#     DIST_INCLUDE  Headers that we distribute. May include wildcards.. If omitted,
+#                   defaults to all headers in . and include/
 #
 #     DIST_BIN_EXCEPT   Distribution blacklists. May include wildcards.
 #     DIST_INCLUDE_EXCEPT
