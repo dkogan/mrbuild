@@ -278,10 +278,17 @@ What are you trying to do?)
 endif
 
 
-DIST_BIN     := $(filter-out $(wildcard $(DIST_BIN_EXCEPT)),		\
-                  $(wildcard $(or $(DIST_BIN),    $(BIN_TARGETS))))
-DIST_INCLUDE := $(filter-out $(wildcard $(DIST_INCLUDE_EXCEPT)),		\
-		  $(wildcard $(or $(DIST_INCLUDE),				\
+# I process the simple wildcard exceptions on DIST_BIN and DIST_INCLUDE in a
+# deferred fashion. The reason is that I wand $(wildcard) to run at install
+# time, i.e. after stuff is built, and the files $(wildcard) is looking at
+# already exist
+DIST_BIN_ORIG     := $(DIST_BIN)
+DIST_INCLUDE_ORIG := $(DIST_INCLUDE)
+
+DIST_BIN     = $(filter-out $(wildcard $(DIST_BIN_EXCEPT)),		\
+                  $(wildcard $(or $(DIST_BIN_ORIG),    $(BIN_TARGETS))))
+DIST_INCLUDE = $(filter-out $(wildcard $(DIST_INCLUDE_EXCEPT)),		\
+		  $(wildcard $(or $(DIST_INCLUDE_ORIG),				\
                                   $(addprefix include/,*.h *.hh *.hpp *.H)	\
                                               *.h *.hh *.hpp *.H)))
 
