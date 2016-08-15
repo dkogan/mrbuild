@@ -34,33 +34,30 @@
 #                   may or may not be called lib..., but the "lib" will be
 #                   prepended to the SONAME if it's missing
 #
-#     ABI_VERSION   An integer indicating the version of the ABI. Usually the
-#                   same as the major version number of the project. Together
-#                   with TAIL_VERSION, these define the default
-#                     VERSION ?= $(ABI_VERSION).$(TAIL_VERSION)
-#                   which can be used in the per-project Makefile
+#     ABI_VERSION   Required for libraries. An integer indicating the version of
+#                   the ABI. Usually the same as the major version number of the
+#                   project. Together with TAIL_VERSION, these define the
+#                   default VERSION ?= $(ABI_VERSION).$(TAIL_VERSION) which can
+#                   be used in the per-project Makefile
 #
-#     TAIL_VERSION  An arbitrary string. Together with TAIL_VERSION, these
-#                   define the default
+#     TAIL_VERSION  Required for libraries. An arbitrary string. Together with
+#                   TAIL_VERSION, these define the default
 #                       VERSION ?= $(ABI_VERSION).$(TAIL_VERSION)
 #                   which can be used in the per-project Makefile
 #
+#     VERSION       Required for non-libraries. A version string is always
+#                   passed as a #define to the compiler, to all documentation
+#                   generators (gengetopt and such). The project Makefile can
+#                   set this to whatever they like. If omitted, it defaults to
+#                   VERSION ?= $(ABI_VERSION).$(TAIL_VERSION)
 #
 # Variables that MAY be defined:
 #
-#     VERSION       A version string is always passed as a #define to the
-#                   compiler, to all documentation generators (gengetopt and
-#                   such). The project Makefile can set this to whatever they
-#                   like. If omitted, it defaults to
-#                       VERSION ?= $(ABI_VERSION).$(TAIL_VERSION)
-
-#     LIB_SOURCES   Sources to build into a library. If undefined, all C and C++
-#                   sources in src/ are taken. May contain wildcards.
+#     LIB_SOURCES   Sources to build into a library. May contain wildcards.
 #
 #     BIN_SOURCES   Sources to build into executables. By default each executable
 #                   will be built from the library and each source in
-#                   BIN_SOURCES. If undefined, all C and C++ sources in bin/ are
-#                   taken. May contain wildcards..
+#                   BIN_SOURCES. May contain wildcards..
 #
 #     CFLAGS	    Flags for C, C++, the preprocessor and both respectively. By
 #     CXXFLAGS	    default we pass -O3 and (for C++) -std=c++0x. If we specify
@@ -113,8 +110,9 @@
 
 
 
-# Make sure I have the variables that must be defined
-MUST_DEF_VARIABLES        := PROJECT_NAME ABI_VERSION TAIL_VERSION
+# Make sure I have the variables that must be defined. Libraries need an ABI and
+# TAIL version, while other need a plain VERSION
+MUST_DEF_VARIABLES        := PROJECT_NAME $(if $(LIB_SOURCES),ABI_VERSION TAIL_VERSION,VERSION)
 $(foreach v,$(MUST_DEF_VARIABLES),$(if $($v),,$(error User MUST specify $v)))
 
 
@@ -156,8 +154,6 @@ complain_unless_all_exist = $(call complain_if_nonempty,$(call get_no_wildcards,
 $(call complain_unless_all_exist,$(LIB_SOURCES) $(BIN_SOURCES))
 
 
-LIB_SOURCES ?= $(addprefix src/*.,cpp cc C c cxx)
-BIN_SOURCES ?= $(addprefix bin/*.,cpp cc C c cxx)
 LIB_SOURCES := $(wildcard $(LIB_SOURCES))
 BIN_SOURCES := $(wildcard $(BIN_SOURCES))
 
@@ -238,7 +234,7 @@ moc_%.cpp: %.h
 
 # by default I build shared libraries only. We known how to build static
 # libraries too, but I don't do it unless asked
-all: $(LIB_TARGET_SO) $(BIN_TARGETS)
+all: $(if $(strip $(LIB_SOURCES)),$(LIB_TARGET_SO)) $(if $(strip $(BIN_SOURCES)),$(BIN_TARGETS))
 .PHONY: all
 .DEFAULT_GOAL := all
 
@@ -262,8 +258,8 @@ $(LIB_TARGET_SO): $(LIB_OBJECTS)
 $(BIN_TARGETS): %: %.o
 	$(CC_LINKER) -Wl,-rpath=$(abspath .) $(LDFLAGS) $(filter %.o, $^) $(filter-out %.o, $^) $(LDLIBS) -o $@
 
-# The binaries link with the DSO
-$(BIN_TARGETS): $(LIB_TARGET_SO)
+# The binaries link with the DSO, if there is one
+$(BIN_TARGETS): $(if $(strip $(LIB_SOURCES)),$(LIB_TARGET_SO))
 
 
 
