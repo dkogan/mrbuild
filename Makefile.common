@@ -232,6 +232,13 @@ ui_%.h: %.ui
 moc_%.cpp: %.h
 	moc-qt4 $< > $@
 
+ui_%.hh: %.ui
+	uic-qt4 $< > $@
+moc_%.cpp: %.hh
+	moc-qt4 $< > $@
+
+
+
 # by default I build shared libraries only. We known how to build static
 # libraries too, but I don't do it unless asked
 all: $(if $(strip $(LIB_SOURCES)),$(LIB_TARGET_SO)) $(if $(strip $(BIN_SOURCES)),$(BIN_TARGETS))
@@ -265,7 +272,7 @@ $(BIN_TARGETS): $(if $(strip $(LIB_SOURCES)),$(LIB_TARGET_SO))
 
 
 clean:
-	rm -rf $(foreach d,$(SOURCE_DIRS),$(addprefix $d,*.a *.o *.so *.so.* *.d moc_* ui_*.h)) $(BIN_TARGETS) $(foreach s,.c .h,$(addsuffix $s,$(basename $(shell find . -name '*.ggo')))) $(EXTRA_CLEAN)
+	rm -rf $(foreach d,$(SOURCE_DIRS),$(addprefix $d,*.a *.o *.so *.so.* *.d moc_* ui_*.h*)) $(BIN_TARGETS) $(foreach s,.c .h,$(addsuffix $s,$(basename $(shell find . -name '*.ggo')))) $(EXTRA_CLEAN)
 distclean: clean
 
 .PHONY: distclean clean
