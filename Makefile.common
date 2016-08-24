@@ -66,9 +66,8 @@ LIB_TARGET_SO	   := $(LIB_TARGET_SO_BARE).$(ABI_VERSION).$(TAIL_VERSION)
 BIN_TARGETS := $(basename $(BIN_SOURCES))
 
 
-# all objects built for inclusion in shared libraries get -fPIC. This is
-# sub-optimal, since it adds the -fPIC overhead even if linking these
-# statically, but this will have to do for now
+# all objects built for inclusion in shared libraries get -fPIC. We don't build
+# static libraries, so this is 100% correct
 $(LIB_OBJECTS): CCXXFLAGS += -fPIC
 
 CCXXFLAGS += -DVERSION='"$(VERSION)"'
