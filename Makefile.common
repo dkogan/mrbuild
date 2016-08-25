@@ -34,9 +34,6 @@ CCXXFLAGS += -g
 # I want the frame pointer. Makes walking the stack WAY easier
 CCXXFLAGS += -fno-omit-frame-pointer
 
-# We like to put headers into their own directory, so I tell the compiler about it
-CCXXFLAGS += -Iinclude
-
 # all warnings by default
 CCXXFLAGS += -Wall -Wextra
 
