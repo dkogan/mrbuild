@@ -20,6 +20,7 @@ VERSION ?= $(ABI_VERSION).$(TAIL_VERSION)
 # Default compilers. By default, we use g++ as a linker
 CC        ?= gcc
 CXX       ?= g++
+NVCC      ?= nvcc
 CC_LINKER ?= $(CXX)
 
 # used to make gcc output header dependency information. All source
@@ -94,8 +95,11 @@ endef
 # define the compile rules. I need to redefine the rules here because my
 # C..FLAGS variables are simple (immediately evaluated), but the user
 # could have specified per-target flags that ALWAYS evaluate deferred-ly
-cc_build_rule = $(strip $(CXX) $(call massageopts_cxx,$(CXXFLAGS) $(CCXXFLAGS) $(CPPFLAGS))) -c -o $@ $<
-c_build_rule  = $(strip $(CC)  $(call massageopts_c,  $(CFLAGS)   $(CCXXFLAGS) $(CPPFLAGS))) -c -o $@ $<
+cc_build_rule = $(strip $(CXX)  $(call massageopts_cxx,$(CXXFLAGS) $(CCXXFLAGS) $(CPPFLAGS))) -c -o $@ $<
+c_build_rule  = $(strip $(CC)   $(call massageopts_c,  $(CFLAGS)   $(CCXXFLAGS) $(CPPFLAGS))) -c -o $@ $<
+cu_build_rule = $(strip $(NVCC) $(call massageopts_c,  $(CUFLAGS)               $(CPPFLAGS))) -c -o $@ $<
+cu_build_rule += --compiler-options -fPIC
+#"$(CCXXFLAGS)"
 
 
 %.o:%.C
@@ -106,6 +110,8 @@ c_build_rule  = $(strip $(CC)  $(call massageopts_c,  $(CFLAGS)   $(CCXXFLAGS) $
 	$(cc_build_rule)
 %.o:%.c
 	$(c_build_rule)
+%.o:%.cu
+	$(cu_build_rule)
 %.o: %.S
 	$(CC) $(ASFLAGS) $(CPPFLAGS) -c -o $@ $<
 
