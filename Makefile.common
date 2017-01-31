@@ -98,8 +98,7 @@ endef
 cc_build_rule = $(strip $(CXX)  $(call massageopts_cxx,$(CXXFLAGS) $(CCXXFLAGS) $(CPPFLAGS))) -c -o $@ $<
 c_build_rule  = $(strip $(CC)   $(call massageopts_c,  $(CFLAGS)   $(CCXXFLAGS) $(CPPFLAGS))) -c -o $@ $<
 cu_build_rule = $(strip $(NVCC) $(call massageopts_c,  $(CUFLAGS)               $(CPPFLAGS))) -c -o $@ $<
-cu_build_rule += --compiler-options -fPIC
-#"$(CCXXFLAGS)"
+cu_build_rule += --compiler-options "$(CCXXFLAGS)"
 
 
 %.o:%.C
