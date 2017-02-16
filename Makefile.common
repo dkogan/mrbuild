@@ -213,8 +213,11 @@ $(if $(strip $($1)),
 	$(or $3,true) )
 endef
 
-install: $(LIB_TARGET_SO) $(LIB_TARGET_SO_BARE) $(LIB_TARGET_SO_BARE).$(ABI_VERSION) $(BIN_TARGETS) \
-         $(DIST_DOC) $(DIST_MAN) $(DIST_DATA)
+ifneq ($(strip $(LIB_SOURCES)),)
+install: $(LIB_TARGET_SO) $(LIB_TARGET_SO_BARE) $(LIB_TARGET_SO_BARE).$(ABI_VERSION)
+endif
+
+install: $(BIN_TARGETS) $(DIST_DOC) $(DIST_MAN) $(DIST_DATA)
 
 # using 'cp -P' instead of 'install' because the latter follows links unconditionally
 ifneq ($(strip $(LIB_SOURCES)),)
