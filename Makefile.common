@@ -5,6 +5,25 @@
 # see README.build.org for the documentation.
 
 
+# There are two ways to pass variables to make:
+#
+# make CFLAGS=-foo
+#   and
+# CFLAGS=-foo make
+#
+# The former creates a "command line" variable and the latter an
+# "environment variable". In order to be able to modify a "command line"
+# variable (to add other flags, say), one MUST use 'override'. So one would have to do
+#
+# override CFLAGS += -bar
+#
+# without the "override" nothing would happen. I want to avoid this
+# rabbithole entirely, so I disallow "command line" variables for things
+# that I modify. Environment variables are OK, though
+$(foreach v,$(.VARIABLES),$(if $(filter command line,$(origin $v)), $(error '$v' not allowed as a make parameter. Please do "$v=xxxx make yyyy" instead of "make yyyy $v=xxxx")))
+
+
+
 # Make sure I have the variables that must be defined. Libraries need an ABI and
 # TAIL version, while other need a plain VERSION
 MUST_DEF_VARIABLES        := PROJECT_NAME $(if $(LIB_SOURCES),ABI_VERSION TAIL_VERSION,VERSION)
