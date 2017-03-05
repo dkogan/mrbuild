@@ -17,10 +17,12 @@
 #
 # override CFLAGS += -bar
 #
-# without the "override" nothing would happen. I want to avoid this
-# rabbithole entirely, so I disallow "command line" variables for things
-# that I modify. Environment variables are OK, though
-$(foreach v,$(.VARIABLES),$(if $(filter command line,$(origin $v)), $(error '$v' not allowed as a make parameter. Please do "$v=xxxx make yyyy" instead of "make yyyy $v=xxxx")))
+# without the "override" nothing would happen. I want to avoid this rabbithole
+# entirely, so I disallow "command line" variables for things that I modify.
+#
+# I only do this for xxxFLAGS becuase cross-building and installing in Debian
+# uses Make in this way. Hopefully this is safe enough
+$(foreach v,$(filter %FLAGS,$(.VARIABLES)),$(if $(filter command line,$(origin $v)), $(error '$v' not allowed as a make parameter. Please do "$v=xxxx make yyyy" instead of "make yyyy $v=xxxx")))
 
 
 
