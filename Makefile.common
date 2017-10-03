@@ -169,11 +169,11 @@ $(LIB_TARGET_SO): LDFLAGS += -shared -Wl,--default-symver -fPIC -Wl,-soname,$(no
 # Here instead of specifying $^, I do just the %.o parts and then the
 # others. This is required to make the linker happy to see the dependent
 # objects first and the dependency objects last. Same as for BIN_TARGETS
-$(LIB_TARGET_SO_BARE) $(LIB_TARGET_SO_BARE).$(ABI_VERSION): | $(LIB_TARGET_SO)
+$(LIB_TARGET_SO_BARE) $(LIB_TARGET_SO_BARE).$(ABI_VERSION): $(LIB_TARGET_SO)
+	ln -fs $(notdir $(LIB_TARGET_SO)) $@
+
 $(LIB_TARGET_SO): $(LIB_OBJECTS)
 	$(CC_LINKER) $(LDFLAGS) $(filter %.o, $^) $(filter-out %.o, $^) $(LDLIBS) -o $@
-	ln -fs $(notdir $@) $(LIB_TARGET_SO_BARE)
-	ln -fs $(notdir $@) $(LIB_TARGET_SO_BARE).$(ABI_VERSION)
 
 # I make sure to give the .o to the linker before the .so and everything else.
 # The .o may depend on the other stuff. The binaries get an rpath (removed at
