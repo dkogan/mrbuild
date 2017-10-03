@@ -135,7 +135,6 @@ cu_build_rule += --compiler-options "$(CCXXFLAGS)"
 %.o: %.S
 	$(CC) $(ASFLAGS) $(CPPFLAGS) -c -o $@ $<
 
-# We like to gengetopt things, and this rules does it
 %.h %.c: %.ggo
 	gengetopt -C -u -g $(VERSION) -i $< -F $* args -f $(notdir $*) -a $(notdir $*)
 
