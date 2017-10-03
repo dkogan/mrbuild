@@ -162,17 +162,15 @@ all: $(if $(strip $(LIB_SOURCES)),$(LIB_TARGET_SO_FULL)) $(if $(strip $(BIN_SOUR
 .PHONY: all
 .DEFAULT_GOAL := all
 
-
-
 $(LIB_TARGET_SO_FULL): LDFLAGS += -shared -Wl,--default-symver -fPIC -Wl,-soname,$(notdir $(LIB_TARGET_SO_BARE)).$(ABI_VERSION)
 
+
+$(LIB_TARGET_SO_BARE) $(LIB_TARGET_SO_ABI): $(LIB_TARGET_SO_FULL)
+	ln -fs $(notdir $(LIB_TARGET_SO_FULL)) $@
 
 # Here instead of specifying $^, I do just the %.o parts and then the
 # others. This is required to make the linker happy to see the dependent
 # objects first and the dependency objects last. Same as for BIN_TARGETS
-$(LIB_TARGET_SO_BARE) $(LIB_TARGET_SO_ABI): $(LIB_TARGET_SO_FULL)
-	ln -fs $(notdir $(LIB_TARGET_SO_FULL)) $@
-
 $(LIB_TARGET_SO_FULL): $(LIB_OBJECTS)
 	$(CC_LINKER) $(LDFLAGS) $(filter %.o, $^) $(filter-out %.o, $^) $(LDLIBS) -o $@
 
