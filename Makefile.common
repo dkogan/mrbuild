@@ -181,8 +181,9 @@ $(LIB_TARGET_SO_FULL): $(LIB_OBJECTS)
 $(BIN_TARGETS): %: %.o
 	$(CC_LINKER) -Wl,-rpath=$(abspath .) $(LDFLAGS) $(filter %.o, $^) $(filter-out %.o, $^) $(LDLIBS) -o $@
 
-# The binaries link with the DSO, if there is one
-$(BIN_TARGETS): $(if $(strip $(LIB_SOURCES)),$(LIB_TARGET_SO_FULL))
+# The binaries link with the DSO, if there is one. I need the libxxx.so to build
+# the binary, and I need the libxxx.so.abi to run it.
+$(BIN_TARGETS): $(if $(strip $(LIB_SOURCES)),$(LIB_TARGET_SO_BARE) $(LIB_TARGET_SO_ABI))
 
 
 
