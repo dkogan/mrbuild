@@ -244,7 +244,7 @@ install: $(BIN_TARGETS) $(DIST_DOC) $(DIST_MAN) $(DIST_DATA)
 ifneq ($(strip $(LIB_SOURCES)),)
 	mkdir -p $(DESTDIR)/$(USRLIB)
 	cp -P $(LIB_TARGET_SO_FULL)  $(DESTDIR)/$(USRLIB)
-	ln -fs $(notdir $(LIB_TARGET_SO_FULL)) $(DESTDIR)/$(USRLIB)/$(notdir $(LIB_TARGET_SO_BARE)).$(ABI_VERSION)
+	ln -fs $(notdir $(LIB_TARGET_SO_FULL)) $(DESTDIR)/$(USRLIB)/$(notdir $(LIB_TARGET_SO_ABI))
 	ln -fs $(notdir $(LIB_TARGET_SO_FULL)) $(DESTDIR)/$(USRLIB)/$(notdir $(LIB_TARGET_SO_BARE))
 endif
 	$(call install_rule,DIST_BIN,         $(DESTDIR)/usr/bin,chmod 0755 $(DESTDIR)/usr/bin/* && ( chrpath -d $(DESTDIR)/usr/bin/* 2>/dev/null || true ))
