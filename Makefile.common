@@ -82,6 +82,7 @@ LIB_NAME           := $(or $(filter lib%,$(PROJECT_NAME)),lib$(PROJECT_NAME))
 LIB_TARGET_SO_BARE := $(LIB_NAME).so
 LIB_TARGET_SO_ABI  := $(LIB_TARGET_SO_BARE).$(ABI_VERSION)
 LIB_TARGET_SO_FULL := $(LIB_TARGET_SO_ABI).$(TAIL_VERSION)
+LIB_TARGET_SO_ALL  := $(LIB_TARGET_SO_BARE) $(LIB_TARGET_SO_ABI) $(LIB_TARGET_SO_FULL)
 
 BIN_TARGETS := $(basename $(BIN_SOURCES))
 
@@ -158,7 +159,7 @@ moc_%.cpp: %.hh
 
 # by default I build shared libraries only. We known how to build static
 # libraries too, but I don't do it unless asked
-all: $(if $(strip $(LIB_SOURCES)),$(LIB_TARGET_SO_FULL) $(LIB_TARGET_SO_BARE) $(LIB_TARGET_SO_ABI)) $(if $(strip $(BIN_SOURCES)),$(BIN_TARGETS))
+all: $(if $(strip $(LIB_SOURCES)),$(LIB_TARGET_SO_ALL)) $(if $(strip $(BIN_SOURCES)),$(BIN_TARGETS))
 .PHONY: all
 .DEFAULT_GOAL := all
 
@@ -233,7 +234,7 @@ $(if $(strip $($1)),
 endef
 
 ifneq ($(strip $(LIB_SOURCES)),)
-install: $(LIB_TARGET_SO_FULL) $(LIB_TARGET_SO_BARE) $(LIB_TARGET_SO_ABI)
+install: $(LIB_TARGET_SO_ALL)
 endif
 
 install: $(BIN_TARGETS) $(DIST_DOC) $(DIST_MAN) $(DIST_DATA)
