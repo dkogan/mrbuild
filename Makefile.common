@@ -247,7 +247,7 @@ ifneq ($(strip $(LIB_SOURCES)),)
 	ln -fs $(notdir $(LIB_TARGET_SO_FULL)) $(DESTDIR)/$(USRLIB)/$(notdir $(LIB_TARGET_SO_ABI))
 	ln -fs $(notdir $(LIB_TARGET_SO_FULL)) $(DESTDIR)/$(USRLIB)/$(notdir $(LIB_TARGET_SO_BARE))
 endif
-	$(call install_rule,DIST_BIN,         $(DESTDIR)/usr/bin,chmod 0755 $(DESTDIR)/usr/bin/* && ( chrpath -d $(DESTDIR)/usr/bin/* 2>/dev/null || true ))
+	$(call install_rule,DIST_BIN,         $(DESTDIR)/usr/bin,chmod 0755 $(DESTDIR)/usr/bin/*)
 	$(call install_rule,DIST_INCLUDE,     $(DESTDIR)/usr/include/$(PROJECT_NAME),)
 	$(call install_rule,DIST_DOC,         $(DESTDIR)/usr/share/doc/$(PROJECT_NAME),)
 	$(call install_rule,DIST_MAN,         $(DESTDIR)/usr/share/man,)
@@ -259,6 +259,14 @@ endif
         # In filenames I rename __colon__ -> :
         # This is required because Make can't deal with : in rules
 	for fil in `find $(DESTDIR) -name '*__colon__*'`; do mv $$fil `echo $$fil | sed s/__colon__/:/g`; done
+
+        # Remove rpaths from everything. /usr/bin is allowed to fail because
+        # some of those executables aren't ELFs. On the other hand, any .so we
+        # find IS en ELF. Those could live in a number of places, since they
+        # could be extension modules for the various languages, and I thus look
+        # for those EVERYWHERE
+	$(if $(wildcard $(DESTDIR)/usr/bin/*),chrpath -d $(DESTDIR)/usr/bin/* 2>/dev/null || true)
+	find $(DESTDIR) -name '*.so' | xargs chrpath -d
 .PHONY: install
 
 
