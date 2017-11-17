@@ -219,8 +219,14 @@ DIST_BIN     = $(filter-out $(wildcard $(DIST_BIN_EXCEPT)),		\
 DIST_INCLUDE = $(filter-out $(wildcard $(DIST_INCLUDE_EXCEPT)),		\
 		  $(wildcard $(DIST_INCLUDE_ORIG)))
 
-# assuming redhat only for the time being
-USRLIB := usr/lib64
+ifneq (,$(shell grep -qi debian /etc/os-release 2>/dev/null && echo yep))
+  # we're a debian box, use the multiarch dir
+  DEB_HOST_MULTIARCH := $(shell dpkg-architecture -qDEB_HOST_MULTIARCH 2>/dev/null)
+  USRLIB             := usr/lib/$(DEB_HOST_MULTIARCH)
+else
+  # we're something else. If /usr/lib64 exists, use that. Otherwise /usr/lib
+  USRLIB := $(if $(wildcard /usr/lib64),usr/lib64,usr/lib)
+endif
 
 # Generates the install rules. Arguments:
 #   1. variable containing the being installed
