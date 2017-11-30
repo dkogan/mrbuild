@@ -216,8 +216,6 @@ define query_python_extension_building_flags
 _PYVARS := $$(shell python -c '$$(_PYVARS_SCRIPT)')
 # I then $$(eval) these tokens one at a time, restoring the whitespace
 $$(foreach v,$$(_PYVARS),$$(eval $$(subst __whitespace__, ,$$v)))
-
-$(warning evaluating......)
 _FLAGS_FROM_PYCC    := $$(wordlist 2,$$(words $$(PY_CC)),$$(PY_CC)) # pull out flags from CC, throw out the compiler itself
 _PY_MRBUILD_CFLAGS  := $$(filter-out -O%,$$(_FLAGS_FROM_PYCC) $$(PY_CFLAGS) $$(PY_CCSHARED) -I$$(PY_INCLUDEPY))
 _PY_MRBUILD_LDFLAGS := $$(PY_LDFLAGS)
