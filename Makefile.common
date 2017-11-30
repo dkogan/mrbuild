@@ -219,7 +219,9 @@ $$(foreach v,$$(_PYVARS),$$(eval $$(subst __whitespace__, ,$$v)))
 # pull out flags from CC, throw out the compiler itself, since I know better
 _FLAGS_FROM_PYCC    := $$(wordlist 2,$$(words $$(PY_CC)),$$(PY_CC))
 _PY_MRBUILD_CFLAGS  := $$(filter-out -O%,$$(_FLAGS_FROM_PYCC) $$(PY_CFLAGS) $$(PY_CCSHARED) -I$$(PY_INCLUDEPY))
-_PY_MRBUILD_LDFLAGS := $$(PY_LDFLAGS)
+# I add an RPATH to the python extension DSO so that it runs in-tree. Will pull
+# it out at install time
+_PY_MRBUILD_LDFLAGS := $$(PY_LDFLAGS) -L$$(abspath .) -Wl,-rpath=$$(abspath .)
 _PY_MRBUILD_LINKER  := $$(PY_BLDSHARED)
 endef
 
