@@ -336,7 +336,7 @@ ifneq ($(strip $(LIB_SOURCES)),)
 	ln -fs $(notdir $(LIB_TARGET_SO_FULL)) $(DESTDIR)/$(USRLIB)/$(notdir $(LIB_TARGET_SO_ABI))
 	ln -fs $(notdir $(LIB_TARGET_SO_FULL)) $(DESTDIR)/$(USRLIB)/$(notdir $(LIB_TARGET_SO_BARE))
 endif
-	$(call install_rule,DIST_BIN,         $(DESTDIR)/usr/bin,chmod 0755 $(DESTDIR)/usr/bin/*)
+	$(call install_rule,DIST_BIN,         $(DESTDIR)/usr/bin,)
 	$(call install_rule,DIST_INCLUDE,     $(DESTDIR)/usr/include/$(PROJECT_NAME),)
 	$(call install_rule,DIST_DOC,         $(DESTDIR)/usr/share/doc/$(PROJECT_NAME),)
 	$(call install_rule,DIST_MAN,         $(DESTDIR)/usr/share/man,)
@@ -356,6 +356,12 @@ endif
         # for those EVERYWHERE
 	$(if $(wildcard $(DESTDIR)/usr/bin/*),chrpath -d $(DESTDIR)/usr/bin/* 2>/dev/null || true)
 	find $(DESTDIR) -name '*.so' | xargs chrpath -d
+
+ifneq ($(strip $(DIST_BIN)),)
+        # Everything executable needs specific permission bits
+	chmod 0755 $(DESTDIR)/usr/bin/*
+endif
+
 .PHONY: install
 
 
