@@ -359,6 +359,14 @@ ifneq ($(strip $(DIST_BIN)),)
 endif
 	find $(DESTDIR) -name '*.so' | xargs chrpath -d
 
+        # Any perl programs need their binary path stuff stripped out. This
+        # exists to let these run in-tree, but needs to be removed at
+        # install-time (similar to an RPATH)
+ifneq ($(strip $(DIST_BIN)),)
+	for fil in `find $(DESTDIR)/usr/bin -type f`; do head -n1 $$fil | grep -q '^#!.*/perl$$' && perl -n -i -e 'print unless /^\s* use \s+ lib \b/x' $$fil; done
+endif
+	find $(DESTDIR)/usr/share/perl5 -type f | xargs perl -n -i -e 'print unless /^\s* use \s+ lib \b/x'
+
 ifneq ($(strip $(DIST_BIN)),)
         # Everything executable needs specific permission bits
 	chmod 0755 $(DESTDIR)/usr/bin/*
