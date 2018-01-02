@@ -354,7 +354,9 @@ endif
         # find IS en ELF. Those could live in a number of places, since they
         # could be extension modules for the various languages, and I thus look
         # for those EVERYWHERE
+ifneq ($(strip $(DIST_BIN)),)
 	$(if $(wildcard $(DESTDIR)/usr/bin/*),chrpath -d $(DESTDIR)/usr/bin/* 2>/dev/null || true)
+endif
 	find $(DESTDIR) -name '*.so' | xargs chrpath -d
 
 ifneq ($(strip $(DIST_BIN)),)
