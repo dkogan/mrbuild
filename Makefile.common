@@ -355,7 +355,7 @@ endif
         # could be extension modules for the various languages, and I thus look
         # for those EVERYWHERE
 ifneq ($(strip $(DIST_BIN)),)
-	$(if $(wildcard $(DESTDIR)/usr/bin/*),chrpath -d $(DESTDIR)/usr/bin/* 2>/dev/null || true)
+	chrpath -d $(DESTDIR)/usr/bin/* 2>/dev/null || true
 endif
 	find $(DESTDIR) -name '*.so' | xargs chrpath -d
 
