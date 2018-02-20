@@ -56,10 +56,6 @@ CCXXFLAGS += -g
 # I want the frame pointer. Makes walking the stack WAY easier
 CCXXFLAGS += -fno-omit-frame-pointer
 
-# all warnings by default
-CCXXFLAGS += -Wall -Wextra
-
-
 # I look through my LIB_SOURCES and BIN_SOURCES. Anything that isn't a wildcard
 # (has * or ?) should exist. If it doesn't, the user messed up and I flag it
 get_no_wildcards          = $(foreach v,$1,$(if $(findstring ?,$v)$(findstring *,$v),,$v))
@@ -118,10 +114,13 @@ endef
 # define the compile rules. I need to redefine the rules here because my
 # C..FLAGS variables are simple (immediately evaluated), but the user
 # could have specified per-target flags that ALWAYS evaluate deferred-ly
-cc_build_rule = $(strip $(CXX)  $(call massageopts_cxx,$(CXXFLAGS) $(CCXXFLAGS) $(CPPFLAGS))) -c -o $@ $<
-c_build_rule  = $(strip $(CC)   $(call massageopts_c,  $(CFLAGS)   $(CCXXFLAGS) $(CPPFLAGS))) -c -o $@ $<
-cu_build_rule = $(strip $(NVCC) $(call massageopts_c,  $(CUFLAGS)               $(CPPFLAGS))) -c -o $@ $<
-cu_build_rule += --compiler-options "$(CCXXFLAGS)"
+#
+# I add the warning options AT THE START of the flag list so that the user can
+# override these
+cc_build_rule = $(strip $(CXX)  $(call massageopts_cxx,-Wall -Wextra $(CXXFLAGS) $(CCXXFLAGS) $(CPPFLAGS))) -c -o $@ $<
+c_build_rule  = $(strip $(CC)   $(call massageopts_c,  -Wall -Wextra $(CFLAGS)   $(CCXXFLAGS) $(CPPFLAGS))) -c -o $@ $<
+cu_build_rule = $(strip $(NVCC) $(call massageopts_c,  -Wall -Wextra $(CUFLAGS)               $(CPPFLAGS))) -c -o $@ $<
+cu_build_rule += --compiler-options "-Wall -Wextra $(CCXXFLAGS)"
 
 
 %.o:%.C
