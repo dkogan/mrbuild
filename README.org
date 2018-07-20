@@ -1,0 +1,359 @@
+* SYNOPSIS
+This project is meant to provide some GNU Makefiles to take the boilerplate away
+from defining a project build. For instance:
+
+#+BEGIN_SRC makefile
+
+PROJECT_NAME := foo
+ABI_VERSION  := 0
+TAIL_VERSION := 1
+
+# Build all .c sources into the library. If all library sources are in src/, you
+# can put src/*.c* here
+LIB_SOURCES := *.c
+
+# build executable foo_tst from the library and foo_tst.cc
+# build executable foo_run from the library and foo_run.cc
+#
+# These should be separate from LIB_SOURCES. If all non-library sources are in
+# bin/, you can put bin/*.c* here
+BIN_SOURCES := foo_tst.cc foo_run.cc
+
+# Any extra flags. The build system always builds with debugging information and
+# (if no other -O flag is given) with optimization
+CCXXFLAGS += -Wno-unused-parameter
+
+# Extra libraries to link with. The library is linked with this. The executables
+# are linked with this AND with the library
+LDLIBS += -lbar
+
+# distribute (in a 'make install' and thus into the package) all headers except
+# those that match *tst*
+DIST_INCLUDE        := *.h
+DIST_INCLUDE_EXCEPT := *tst*
+
+# distribute (in a 'make install' and thus into the package) all executables
+# built from BIN_SOURCES (foo_tst, foo_run) except *_tst, so only foo_run is
+# distributed
+DIST_BIN_EXCEPT     := *_tst
+
+include /usr/include/mrbuild/Makefile.common
+#+END_SRC
+
+* DESCRIPTION
+When defining the build rules for a project, there's often much boilerplate
+involved, the provenance of which is generally lost to time. And there's much
+cargo-culting, and every project effectively forks the build scripts. The
+results aren't good, and mrbuild attempts to organize this. We provide a
+consistent set of Makefiles and project tree layout conventions. These make it
+possible to easily get friendly and consistent builds.
+
+A single Makefile defines the build for a project. This is done by defining some
+variables and then =include=-ing =Makefile.common= from =mrbuild=. That file
+produces the rules that =make= uses to do its job. Note that unlike the
+CMake-based system, this is a one-step process: we don't create Makefiles and
+then use them to build stuff; we just build the stuff.
+
+As before, each project is assumed to be a library where some sources are built
+into an object file that can be linked into other executables later (we produce
+/shared/ objects only). We also have headers that are intended to be
+=#include=-d by other projects to make use of the library. Finally, we can also
+have some other sources that don't go into the shared library; these usually
+produce executables that link with our library object. The project build
+definition file is a plain =Makefile=, so no special syntax and rules need to be
+mentioned here. And because it's a plain =Makefile=, we can define whatever
+arbitrary rules we want for anything not specifically covered by the build
+system.
+
+Furthermore, again since this is a plain =Makefile=, we can pass it external
+options in the environment. For instance, if we want to build without
+optimizations, simply invoke
+
+#+BEGIN_EXAMPLE
+CCXXFLAGS=-O0 make
+#+END_EXAMPLE
+
+The build system will pick up the new build option, and is smart enough to
+replace the default of =-O3= with the given =-O0=.
+
+Note that this is subtly different from
+
+#+BEGIN_EXAMPLE
+make CCXXFLAGS=-O0
+#+END_EXAMPLE
+
+This latter invocation is /not/ supported, and we throw an error if this is
+encountered.
+
+** Description
+
+As stated before, each =Makefile= contains some variable definitions followed by
+an =include= of a common Makefile. A complete list of the variables =mrbuild=
+knows about:
+
+*** Variables that MUST be defined
+
+- =PROJECT_NAME=
+
+The name of the project. Ends up in the SONAME. Libraries may or may not be
+called =lib...=, but the =lib= will be prepended to the SONAME if it's missing.
+
+- =ABI_VERSION=
+
+Required for libraries. An integer indicating the version of the ABI. Usually
+the same as the major version number of the project. Together with
+=TAIL_VERSION=, these define the default
+
+#+BEGIN_EXAMPLE
+VERSION ?= $(ABI_VERSION).$(TAIL_VERSION)
+#+END_EXAMPLE
+
+which can be used in the per-project Makefile
+
+- =TAIL_VERSION=
+
+Required for libraries. An arbitrary string. Together with =ABI_VERSION=, these
+define the default
+
+#+BEGIN_EXAMPLE
+VERSION ?= $(ABI_VERSION).$(TAIL_VERSION)
+#+END_EXAMPLE
+
+which can be used in the per-project Makefile
+
+- =VERSION=
+
+Required for non-libraries, optional for libraries. This is a version string
+that is always passed as a =#define= to the compiler, to all documentation
+generators (gengetopt and such) and so on. The project Makefile can set this to
+whatever they like. If omitted, it defaults to
+
+#+BEGIN_EXAMPLE
+VERSION ?= $(ABI_VERSION).$(TAIL_VERSION)
+#+END_EXAMPLE
+
+If =VERSION= and =ABI_VERSION= and =TAIL_VERSION= are all defined, the library
+SONAME comes from the ABI and TAIL versions, but the documentation will have the
+VERSION string.
+
+*** Build variables that MAY be defined
+
+- =LIB_SOURCES=
+
+Sources to build into a library. May contain wildcards. If omitted, no library
+will be built.
+
+- =BIN_SOURCES=
+
+Sources to build into executables. By default each executable will be built from
+the library and each source in =BIN_SOURCES=. So if we have =a.c= and =b.c= in
+=BIN_SOURCES=, then two executables will be built: =a= and =b=, each linking in
+the library. May contain wildcards.
+
+- =CFLAGS=, =CXXFLAGS=, =CCXXFLAGS=, =CPPFLAGS=
+
+Flags for C, C++, both and the preprocessor respectively. By default we pass
+=-O3= and (for C++) =-std=c++0x=. If we specify any other optimization level or
+standard, the defaults will be omitted. This is commonly used to build without
+optimizations:
+
+#+BEGIN_EXAMPLE
+CCXXFLAGS=-O0 make
+#+END_EXAMPLE
+
+In the Makefile these should be touched with =+== to not override any values
+passed in the environment.
+
+- =LDFLAGS=
+
+Similar to the above. Contains the linker flags.
+
+- =LDLIBS=
+
+Similar to the above. Contains the libraries we link with. By default this
+applies to all objects, libraries and executables we build. This is often
+overkill; if we want to apply some linker flag just to a particular object, use
+a per-target variable:
+
+#+BEGIN_SRC makefile
+BIN_SOURCES = a.c
+a: LDLIBS += -lbleh
+#+END_SRC
+
+*** Installation variables that MAY be defined
+
+The =DIST_...= variables are only looked-at if we =make install=, which in our
+world happens only when we're building a package. Generally =make install=
+copies the files indicated by the =DIST_...= variables to =DESTDIR=.
+
+- =DIST_BIN=
+
+Executables that we distribute. May include wildcards. If omitted, defaults to
+all the executables that =$(BIN_SOURCES)= produce
+
+- =DIST_INCLUDE=
+
+Headers that we distribute. May include wildcards. If omitted, no headers are
+distributed.
+
+- =DIST_BIN_EXCEPT=, =DIST_INCLUDE_EXCEPT=
+
+Simple distribution blacklists. May include wildcards. Anything that is matched
+by =DIST_XXX_EXCEPT= is /not/ distributed, even if it appears in =DIST_XXX=. For
+fancier logic, use the =..._FINDSPEC= variables described below
+
+- =DIST_DOC=
+
+Documentation we ship. May include wildcards.
+
+- =DIST_MAN=
+
+Man-pages we ship. May include wildcards.
+
+- =DIST_DATA=
+
+Arbitrary data we ship. May include wildcards.
+
+- =DIST_PERL_MODULES=
+
+Perl modules
+
+- =DIST_PY2_MODULES=
+
+Python2 modules
+
+- =DIST_PY3_MODULES=
+
+Python3 modules
+
+- =DIST_BIN_EXCEPT_FINDSPEC=, =DIST_INCLUDE_EXCEPT_FINDSPEC=, =DIST_DOC_EXCEPT_FINDSPEC=, =DIST_MAN_EXCEPT_FINDSPEC=, =DIST_DATA_EXCEPT_FINDSPEC=
+
+After we install a set of files to the =DESTDIR=, we may want to delete some
+subset of them. This is similar to the =..._EXCEPT= blacklists above, but
+accomplished with the =find= utility, so we have more flexibility. For instance,
+to install all the manpages except onces for tests, do this:
+
+#+BEGIN_SRC makefile
+DIST_MAN                 := doxygen-doc/man/man3
+DIST_MAN_EXCEPT_FINDSPEC := -type f -name '*_test.3'
+#+END_SRC
+
+To install only the manpage for the =frobnicator= utility (delete all others) we
+do this:
+
+#+BEGIN_SRC makefile
+DIST_MAN                 := doxygen-doc/man/man3
+DIST_MAN_EXCEPT_FINDSPEC := -type f \! \( -name 'frobnicator.3' \)
+#+END_SRC
+
+- =EXTRA_CLEAN=
+
+Additional targets to clean out during a =make clean=
+
+** More complex example
+An annotated example showing some more complex usage appears in
+[[file:build_examples/GNU_Make/Makefile]], and is copied here
+
+#+BEGIN_SRC makefile
+# -*- Makefile -*-
+
+# This is a sample Makefile using the Makefile.common infrastructure. A quick
+# way to bootstrap a new project is to copy this file to the root directory of
+# the project and then to modify each variable to fit that particular project.
+
+# The name of the project. By convention, libraries should be called lib... but
+# this isn't required
+PROJECT_NAME := libfrobnicator
+
+# The version of the library. We treat the major version as the version of the
+# ABI/API. So every time we change the ABI or an API in a backwards-incompatible
+# way, we bump the ABI_VERSION. If we make non-breaking changes, bumping the
+# TAIL_VERSION is sufficient. In this example, the full version is 0.1
+ABI_VERSION  := 0
+TAIL_VERSION := 1
+
+# Build all C and C++ sources in src/ into the library
+LIB_SOURCES := src/*.c*
+
+# Build all C and C++ sources in bin/ into separate executables
+BIN_SOURCES := bin/*.c*
+
+# If bin/run_foo.c exists, it is picked up in BIN_SOURCES, and the bin/run_foo
+# executable will be built from the library and bin/run_foo.o (built from
+# bin/run_foo.c). This is the default behavior and nothing needs to be specified
+
+# I specify that bin/run_foo2 consists of the library and bin/run_foo2.o (as
+# usual) AND links with bin/run_foo2_extra.o. The latter will be built from
+# bin/run_foo2_extra.c (or .cc or .cpp and so on, whichever exists)
+bin/run_foo2: bin/run_foo2_extra.o
+
+# Suppose I have bin/run_foo3.c to build bin/run_foo3. And suppose bin/run_foo3
+# needs to additionally build with sources generated from run_foo3.in: the .o
+# links with bin/run_foo3_generated.o (built from bin/run_foo3_generated.c) and
+# the .c #includes run_foo3_generated.h, and that both of these are generated
+# from run_foo3.in. We specify this in the usual way, with a tiny bit of
+# mrbuild-specific stuff:
+run_foo3:   run_foo3_generated.o
+run_foo3.o: run_foo3_generated.h
+%3_generated.h %3_generated.c: %3.in
+	make_generated_files $<
+EXTRA_CLEAN += run_foo3_generated.h run_foo3_generated.c
+# If we're using gengetopt to generate the sources, the build rule and the
+# EXTRA_CLEAN list above are provided in mrbuild, and can be omitted.
+
+# Any extra flags to pass to the C and C++ compilers. The build system always
+# builds with debugging information and (if no other -O flag is given) with
+# optimization. Use += to not override any settings from the commandline
+CCXXFLAGS += -Wno-unused-parameter
+
+# Extra flags to pass to the C compiler when building src/bleh.o from src/bleh.c
+src/bleh.o: CFLAGS += -DFOO
+
+# Link bin/run_foo with -lbar. Do NOT link the library with -lbar.
+bin/run_foo: LDLIBS += -lbar
+
+# Link all the executables AND the library with -lzap
+LDLIBS += -lzap
+
+# If we have doxygen docs, we can state the rule to build them. Everything will
+# be built into doxygen-doc/, the DIST_DOC and DIST_MAN distribution lists below
+# install the man-pages and the html docs
+doc: doxygen-doc/
+doxygen-doc/: frobnicator.dox
+	SRCDIR='.' PROJECT='frobnicator' DOCDIR=$@ VERSION='$(VERSION)' PERL_PATH='/bin/perl' HAVE_DOT='YES' DOT_PATH='/bin' GENERATE_MAN='YES' GENERATE_RTF='NO' GENERATE_XML='NO' GENERATE_HTMLHELP='NO' GENERATE_CHI='NO' GENERATE_HTML='YES' GENERATE_LATEX='NO' doxygen $<
+doxygen-doc/%: doxygen-doc/ ;
+.PHONY: doc
+EXTRA_CLEAN += doxygen-doc
+
+# distribute (in a 'make install' and thus into the package) all headers in src/
+# except those that match src/*tst*
+DIST_INCLUDE        := src/*.h
+DIST_INCLUDE_EXCEPT := src/*tst*
+
+# distribute (in a 'make install' and thus into the package) all executables
+# built from BIN_SOURCES except bin/*_tst
+DIST_BIN_EXCEPT     := bin/*_tst
+
+# distribute all generated manpages in section 3 EXCEPT those for the test
+# program
+DIST_MAN                 := doxygen-doc/man/man3
+DIST_MAN_EXCEPT_FINDSPEC := -type f -name '*_tst.3'
+
+# distribute the html documentation
+DIST_DOC := doxygen-doc/html
+
+include /usr/include/mrbuild/Makefile.common
+
+#+END_SRC
+
+* MAINTAINER
+This is maintained by Dima Kogan <dima@secretsauce.net>
+* LICENSE AND COPYRIGHT
+
+This library is free software; you can redistribute it and/or modify it under
+the terms of the GNU Lesser General Public License as published by the Free
+Software Foundation; either version 2.1 of the License, or (at your option) any
+later version.
+
+Copyright 2016-2018 California Institute of Technology
+Copyright 2018 Dima Kogan (=dima@secretsauce.net=)
