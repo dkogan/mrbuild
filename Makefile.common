@@ -235,6 +235,13 @@ endef
 $(foreach v,$(_PYVARS_API),$(eval $(call _PY_DEFINE_API_VAR,$v)))
 
 
+# Python docstring rules. I construct these from plain ASCII files to handle
+# line wrapping
+%.docstring.h: %.docstring
+	< $^ sed 's/"/\\"/g; s/^/"/; s/$$/\\n"/;' > $@
+EXTRA_CLEAN += *.docstring.h
+
+
 
 
 
