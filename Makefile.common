@@ -309,18 +309,17 @@ DIST_BIN     = $(filter-out $(wildcard $(DIST_BIN_EXCEPT)),		\
 DIST_INCLUDE = $(filter-out $(wildcard $(DIST_INCLUDE_EXCEPT)),		\
 		  $(wildcard $(DIST_INCLUDE_ORIG)))
 
-ifneq (,$(shell grep -qi debian /etc/os-release 2>/dev/null && echo yep))
-  # we're a debian-ish box, use the multiarch dir, and Debian's manpage dir
+MANDIR := usr/share/man
+
+USE_DEBIAN_PATHS := $(shell grep -qi debian /etc/os-release 2>/dev/null && echo yep)
+ifneq (,$(USE_DEBIAN_PATHS))
+  # we're a debian-ish box, use the multiarch dir
   DEB_HOST_MULTIARCH := $(shell dpkg-architecture -qDEB_HOST_MULTIARCH 2>/dev/null)
   USRLIB             := usr/lib/$(DEB_HOST_MULTIARCH)
-  MANDIR             := usr/share/man
 else
   # we're something else. Do what CentOS does.
   # If /usr/lib64 exists, use that. Otherwise /usr/lib
   USRLIB := $(if $(wildcard /usr/lib64),usr/lib64,usr/lib)
-
-  MANDIR := usr/share/man/man1
-
 endif
 
 # Generates the install rules. Arguments:
@@ -333,6 +332,14 @@ $(if $(strip $($1)),
 	cp -r $($1) $2 &&								\
 	$(if $($(1)_EXCEPT_FINDSPEC),find $2 $($(1)_EXCEPT_FINDSPEC) -delete &&)	\
 	$(or $3,true) )
+endef
+
+# Redhat wants the various manpage section get their own subdir for some reason
+define move_manpages_for_redhat
+  mkdir -p $(DESTDIR)/$(MANDIR)/man$1                        && \
+  (mv $(DESTDIR)/$(MANDIR)/*.$1    $(DESTDIR)/$(MANDIR)/man$1 2>/dev/null || true) && \
+  (mv $(DESTDIR)/$(MANDIR)/*.$1.gz $(DESTDIR)/$(MANDIR)/man$1 2>/dev/null || true) && \
+  (rmdir $(DESTDIR)/$(MANDIR)/man$1                           2>/dev/null || true)
 endef
 
 ifneq ($(strip $(LIB_SOURCES)),)
@@ -351,7 +358,16 @@ endif
 	$(call install_rule,DIST_BIN,         $(DESTDIR)/usr/bin,)
 	$(call install_rule,DIST_INCLUDE,     $(DESTDIR)/usr/include/$(PROJECT_NAME),)
 	$(call install_rule,DIST_DOC,         $(DESTDIR)/usr/share/doc/$(PROJECT_NAME),)
+
+# I install the manpages normally. On Redhat I need to shuffle them into
+# different subdirectories. This is incomplete: sections that aren't simply
+# digits 1-9 will not be moved. "3perl" is an example I can think of that won't
+# work here. Good-enough for now
 	$(call install_rule,DIST_MAN,         $(DESTDIR)/$(MANDIR),)
+ifeq (,$(USE_DEBIAN_PATHS))
+	$(foreach s,1 2 3 4 5 6 7 8 9,$(call move_manpages_for_redhat,$s) && ) true
+endif
+
 	$(call install_rule,DIST_DATA,        $(DESTDIR)/usr/share/$(PROJECT_NAME),)
 	$(call install_rule,DIST_PERL_MODULES,$(DESTDIR)/usr/share/perl5,)
 	$(call install_rule,DIST_PY2_MODULES, $(DESTDIR)/usr/lib/python2.7/site-packages,)
