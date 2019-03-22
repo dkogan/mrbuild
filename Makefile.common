@@ -180,6 +180,7 @@ moc_%.cpp: %.hh
 #     PY_INCLUDEPY
 #     PY_BLDSHARED
 #     PY_LDFLAGS
+#     PY_EXT_SUFFIX
 #
 #  These process the above into a single set of CFLAGS:
 #
@@ -199,14 +200,17 @@ moc_%.cpp: %.hh
 # thing at all
 #
 # Variables to ask Python about
-_PYVARS_LIST := CC CFLAGS CCSHARED INCLUDEPY BLDSHARED LDFLAGS
+_PYVARS_LIST := CC CFLAGS CCSHARED INCLUDEPY BLDSHARED LDFLAGS EXT_SUFFIX
 
 # Python script to query those variables
 define _PYVARS_SCRIPT
+from __future__ import print_function
 import sysconfig
 import re
+conf = sysconfig.get_config_vars()
 for v in ($(foreach v,$(_PYVARS_LIST),"$v",)):
-    print re.sub("[\t ]+", "__whitespace__", "PY_{}:={}".format(v, sysconfig.get_config_var(v)))
+    if v in conf:
+        print(re.sub("[\t ]+", "__whitespace__", "PY_{}:={}".format(v, conf[v])))
 endef
 
 # I eval this to actually invoke the Python and to ingest its results. I only
@@ -233,6 +237,9 @@ define _PY_DEFINE_API_VAR
 $1 = $$(if $$(_$1),,$$(eval $$(query_python_extension_building_flags)))$$(_$1)
 endef
 $(foreach v,$(_PYVARS_API),$(eval $(call _PY_DEFINE_API_VAR,$v)))
+
+# this is not set in python2
+PY_EXT_SUFFIX := $(or $(PY_EXT_SUFFIX),.so)
 
 
 # Python docstring rules. I construct these from plain ASCII files to handle
