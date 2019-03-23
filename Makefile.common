@@ -167,8 +167,8 @@ PYTHON_VERSION_FOR_EXTENSIONS := 2 # 2 or 3
 #
 # There's some sillyness in Make I need to work around. First, I produce a
 # python script to query the various build flags, but replacing all whitespace
-# with __whitespace__. The string I get when running this script will have a
-# number of whitespace-separated tokens, each one setting ONE variable
+# with __whitespace__. The string I get when running this script will then have
+# a number of whitespace-separated tokens, each setting ONE variable
 #
 # I set up a number of variables:
 #
@@ -215,10 +215,10 @@ for v in ($(foreach v,$(_PYVARS_LIST),"$v",)):
 endef
 
 # I eval this to actually invoke the Python and to ingest its results. I only
-# eval this ONLY when necessary
+# eval this ONLY when necessary.
 define query_python_extension_building_flags
 _PYVARS := $$(shell python$(PYTHON_VERSION_FOR_EXTENSIONS) -c '$$(_PYVARS_SCRIPT)')
-# I then $$(eval) these tokens one at a time, restoring the whitespace
+# I then $(eval) these tokens one at a time, restoring the whitespace
 $$(foreach v,$$(_PYVARS),$$(eval $$(subst __whitespace__, ,$$v)))
 # pull out flags from CC, throw out the compiler itself, since I know better
 _FLAGS_FROM_PYCC    := $$(wordlist 2,$$(words $$(PY_CC)),$$(PY_CC))
