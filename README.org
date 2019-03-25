@@ -4,6 +4,8 @@ from defining a project build. For instance:
 
 #+BEGIN_SRC makefile
 
+include /usr/include/mrbuild/Makefile.common.header
+
 PROJECT_NAME := foo
 ABI_VERSION  := 0
 TAIL_VERSION := 1
@@ -37,7 +39,7 @@ DIST_INCLUDE_EXCEPT := *tst*
 # distributed
 DIST_BIN_EXCEPT     := *_tst
 
-include /usr/include/mrbuild/Makefile.common
+include /usr/include/mrbuild/Makefile.common.footer
 #+END_SRC
 
 * DESCRIPTION
@@ -49,10 +51,11 @@ consistent set of Makefiles and project tree layout conventions. These make it
 possible to easily get friendly and consistent builds.
 
 A single Makefile defines the build for a project. This is done by defining some
-variables and then =include=-ing =Makefile.common= from =mrbuild=. That file
-produces the rules that =make= uses to do its job. Note that unlike the
-CMake-based system, this is a one-step process: we don't create Makefiles and
-then use them to build stuff; we just build the stuff.
+variables and then =include=-ing =Makefile.common.header=,
+=Makefile.common.footer= from =mrbuild=. Those files produce the rules that
+=make= uses to do its job. Note that unlike the CMake-based system, this is a
+one-step process: we don't create Makefiles and then use them to build stuff; we
+just build the stuff.
 
 As before, each project is assumed to be a library where some sources are built
 into an object file that can be linked into other executables later (we produce
@@ -257,6 +260,8 @@ An annotated example showing some more complex usage appears in
 #+BEGIN_SRC makefile
 # -*- Makefile -*-
 
+include /usr/include/mrbuild/Makefile.common.header
+
 # This is a sample Makefile using the Makefile.common infrastructure. A quick
 # way to bootstrap a new project is to copy this file to the root directory of
 # the project and then to modify each variable to fit that particular project.
@@ -342,7 +347,7 @@ DIST_MAN_EXCEPT_FINDSPEC := -type f -name '*_tst.3'
 # distribute the html documentation
 DIST_DOC := doxygen-doc/html
 
-include /usr/include/mrbuild/Makefile.common
+include /usr/include/mrbuild/Makefile.common.footer
 
 #+END_SRC
 
