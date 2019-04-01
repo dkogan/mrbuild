@@ -4,7 +4,7 @@
 # Makefile at parsing time. So this must be included BEFORE the rest of the user
 # Makefile
 
-PYTHON_VERSION_FOR_EXTENSIONS := 2 # 2 or 3
+PYTHON_VERSION_FOR_EXTENSIONS ?= 2 # 2 or 3
 # Flags for python extension modules. See
 # http://notes.secretsauce.net/notes/2017/11/14_python-extension-modules-without-setuptools-or-distutils.html
 #
