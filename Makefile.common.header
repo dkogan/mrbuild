@@ -53,6 +53,7 @@ PYTHON_VERSION_FOR_EXTENSIONS ?= 2 # 2 or 3
 #     PY_BLDSHARED
 #     PY_LDFLAGS
 #     PY_EXT_SUFFIX
+#     PY_MULTIARCH
 #
 #  These process the above into a single set of CFLAGS:
 #
@@ -72,7 +73,7 @@ PYTHON_VERSION_FOR_EXTENSIONS ?= 2 # 2 or 3
 # thing at all
 #
 # Variables to ask Python about
-_PYVARS_LIST := CC CFLAGS CCSHARED INCLUDEPY BLDSHARED LDFLAGS EXT_SUFFIX
+_PYVARS_LIST := CC CFLAGS CCSHARED INCLUDEPY BLDSHARED LDFLAGS EXT_SUFFIX MULTIARCH
 
 # Python script to query those variables
 define _PYVARS_SCRIPT
@@ -110,5 +111,7 @@ $1 = $$(if $$(_$1),,$$(eval $$(query_python_extension_building_flags)))$$(_$1)
 endef
 $(foreach v,$(_PYVARS_API),$(eval $(call _PY_DEFINE_API_VAR,$v)))
 
-# this is not set in python2
-PY_EXT_SUFFIX := $(or $(PY_EXT_SUFFIX),.so)
+# If I have a suffix, use it (this is available in python3. Has ABI,
+# architecture details). Otherwise, try the multiarch suffix, or if even THAT
+# isn't available, just do .so
+PY_EXT_SUFFIX := $(or $(PY_EXT_SUFFIX),$(if $(PY_MULTIARCH),.$(PY_MULTIARCH)).so)
