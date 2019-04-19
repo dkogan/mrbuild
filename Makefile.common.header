@@ -91,7 +91,7 @@ endef
 define query_python_extension_building_flags
 _PYVARS := $$(shell python$(PYTHON_VERSION_FOR_EXTENSIONS) -c '$$(_PYVARS_SCRIPT)')
 # I then $(eval) these tokens one at a time, restoring the whitespace
-$$(foreach v,$$(_PYVARS),$$(eval $$(subst __whitespace__, ,$$v)))
+$$(foreach setvarcmd,$$(_PYVARS),$$(eval $$(subst __whitespace__, ,$$(setvarcmd))))
 # pull out flags from CC, throw out the compiler itself, since I know better
 _FLAGS_FROM_PYCC    := $$(wordlist 2,$$(words $$(PY_CC)),$$(PY_CC))
 _PY_MRBUILD_CFLAGS  := $$(filter-out -O%,$$(_FLAGS_FROM_PYCC) $$(PY_CFLAGS) $$(PY_CCSHARED) -I$$(PY_INCLUDEPY))
