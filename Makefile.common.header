@@ -83,7 +83,7 @@ import re
 conf = sysconfig.get_config_vars()
 for v in ($(foreach v,$(_PYVARS_LIST),"$v",)):
     if v in conf:
-        print(re.sub("[\t ]+", "__whitespace__", "PY_{}:={}".format(v, conf[v])))
+        print(re.sub("[\t ]+", "__whitespace__", "_PY_{}:={}".format(v, conf[v])))
 endef
 
 # I eval this to actually invoke the Python and to ingest its results. I only
