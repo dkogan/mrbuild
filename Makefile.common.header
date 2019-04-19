@@ -73,7 +73,7 @@ PYTHON_VERSION_FOR_EXTENSIONS ?= 2 # 2 or 3
 # thing at all
 #
 # Variables to ask Python about
-_PYVARS_LIST := CC CFLAGS CCSHARED INCLUDEPY BLDSHARED LDFLAGS EXT_SUFFIX MULTIARCH
+_PYVARS_LIST := CC CFLAGS CCSHARED INCLUDEPY BLDSHARED BLDLIBRARY LDFLAGS EXT_SUFFIX MULTIARCH
 
 # Python script to query those variables
 define _PYVARS_SCRIPT
@@ -98,7 +98,7 @@ _PY_MRBUILD_CFLAGS  := $$(filter-out -O%,$$(_FLAGS_FROM_PYCC) $$(PY_CFLAGS) $$(P
 # I add an RPATH to the python extension DSO so that it runs in-tree. Will pull
 # it out at install time
 _PY_MRBUILD_LDFLAGS := $$(PY_LDFLAGS) -L$$(abspath .) -Wl,-rpath=$$(abspath .)
-_PY_MRBUILD_LINKER  := $$(PY_BLDSHARED)
+_PY_MRBUILD_LINKER  := $$(PY_BLDSHARED) $$(PY_BLDLIBRARY)
 endef
 
 # List of variables a user Makefile could touch
