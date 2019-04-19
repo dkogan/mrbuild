@@ -107,7 +107,7 @@ _PYVARS_API := $(foreach v,$(_PYVARS_LIST),PY_$v) PY_MRBUILD_CFLAGS PY_MRBUILD_L
 # The first time the user touches these variables, ask Python. Each subsequent
 # time, use the previously-returned value
 define _PY_DEFINE_API_VAR
-$1 = $$(if $$(_$1),,$$(eval $$(query_python_extension_building_flags)))$$(_$1)
+$1 = $$(or $$(_$1),$$(eval $$(query_python_extension_building_flags))$$(_$1))
 endef
 $(foreach v,$(_PYVARS_API),$(eval $(call _PY_DEFINE_API_VAR,$v)))
 
