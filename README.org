@@ -10,16 +10,16 @@ PROJECT_NAME := foo
 ABI_VERSION  := 0
 TAIL_VERSION := 1
 
-# Build all .c sources into the library. If all library sources are in src/, you
-# can put src/*.c* here
+# Build all .c sources into a library: libfoo. If all library sources are in
+# src/, you can put src/*.c here
 LIB_SOURCES := *.c
 
-# build executable foo_tst from the library and foo_tst.cc
-# build executable foo_run from the library and foo_run.cc
+# build executable foo_tst from foo_tst.cc; it will be linked with libfoo
+# build executable foo_run from foo_run.cc; it will be linked with libfoo
 #
 # These should be separate from LIB_SOURCES. If all non-library sources are in
-# bin/, you can put bin/*.c* here
-BIN_SOURCES := foo_tst.cc foo_run.cc
+# bin/, you can put bin/*.c here
+BIN_SOURCES := foo_tst.c foo_run.c
 
 # Any extra flags. The build system always builds with debugging information and
 # (if no other -O flag is given) with optimization
@@ -44,29 +44,34 @@ include /usr/include/mrbuild/Makefile.common.footer
 
 * DESCRIPTION
 When defining the build rules for a project, there's often much boilerplate
-involved, the provenance of which is generally lost to time. And there's much
-cargo-culting, and every project effectively forks the build scripts. The
-results aren't good, and mrbuild attempts to organize this. We provide a
-consistent set of Makefiles and project tree layout conventions. These make it
-possible to easily get friendly and consistent builds.
+involved, the provenance of which is often lost to time. And there's usually
+much cargo-culting, and every project effectively forks the build scripts. The
+results aren't good, and mrbuild attempts to organize this. mrbuild provides a
+consistent set of =Makefiles= and project tree layout conventions. These make it
+easy to get friendly and consistent builds.
 
-A single Makefile defines the build for a project. This is done by defining some
-variables and then =include=-ing =Makefile.common.header=,
+A project that uses mrbuild is defined by a single =Makefile=. This is done by
+defining some variables and =include=-ing =Makefile.common.header=,
 =Makefile.common.footer= from =mrbuild=. Those files produce the rules that
 =make= uses to do its job. Note that unlike the CMake-based system, this is a
-one-step process: we don't create Makefiles and then use them to build stuff; we
-just build the stuff.
+one-step process: we don't create =Makefiles= and then use them to build stuff;
+we just build the stuff.
 
-As before, each project is assumed to be a library where some sources are built
-into an object file that can be linked into other executables later (we produce
-/shared/ objects only). We also have headers that are intended to be
-=#include=-d by other projects to make use of the library. Finally, we can also
-have some other sources that don't go into the shared library; these usually
-produce executables that link with our library object. The project build
-definition file is a plain =Makefile=, so no special syntax and rules need to be
-mentioned here. And because it's a plain =Makefile=, we can define whatever
-arbitrary rules we want for anything not specifically covered by the build
-system.
+Each project builds a library (a /shared/ object) and optionally, some
+executables. mrbuild knows how to build commonly-used things: QT interfaces,
+python extensions, etc. Intentionally, there's no mechanism to "find" dependency
+libraries: you should know where your dependencies live, and you can tell Make
+yourself the normal way: with =CFLAGS= and =LDFLAGS=.
+
+mrbuild will set up the =RPATH= tags to make the current directory findable.
+Thus executables can be run without installing, and they will link with the
+locally-built library. At install-time these =RPATH= tags will be stripped-away,
+so no extra steps are required when building packages.
+
+The project build definition file is a plain =Makefile=, so no special syntax
+and rules need to be mentioned here. And because it's a plain =Makefile=, we can
+define whatever arbitrary rules we want for anything not specifically covered by
+mrbuild.
 
 Furthermore, again since this is a plain =Makefile=, we can pass it external
 options in the environment. For instance, if we want to build without
@@ -88,11 +93,8 @@ make CCXXFLAGS=-O0
 This latter invocation is /not/ supported, and we throw an error if this is
 encountered.
 
-** Description
-
-As stated before, each =Makefile= contains some variable definitions followed by
-an =include= of a common Makefile. A complete list of the variables =mrbuild=
-knows about:
+** API
+A complete list of the variables =mrbuild= knows about:
 
 *** Variables that MUST be defined
 
@@ -111,7 +113,7 @@ the same as the major version number of the project. Together with
 VERSION ?= $(ABI_VERSION).$(TAIL_VERSION)
 #+END_EXAMPLE
 
-which can be used in the per-project Makefile
+which can be used in the per-project =Makefile=
 
 - =TAIL_VERSION=
 
@@ -122,13 +124,13 @@ define the default
 VERSION ?= $(ABI_VERSION).$(TAIL_VERSION)
 #+END_EXAMPLE
 
-which can be used in the per-project Makefile
+which can be used in the per-project =Makefile=
 
 - =VERSION=
 
 Required for non-libraries, optional for libraries. This is a version string
 that is always passed as a =#define= to the compiler, to all documentation
-generators (gengetopt and such) and so on. The project Makefile can set this to
+generators (gengetopt and such) and so on. The project =Makefile= can set this to
 whatever they like. If omitted, it defaults to
 
 #+BEGIN_EXAMPLE
@@ -164,7 +166,7 @@ optimizations:
 CCXXFLAGS=-O0 make
 #+END_EXAMPLE
 
-In the Makefile these should be touched with =+== to not override any values
+In the =Makefile= these should be touched with =+== to not override any values
 passed in the environment.
 
 - =LDFLAGS=
@@ -253,6 +255,29 @@ DIST_MAN_EXCEPT_FINDSPEC := -type f \! \( -name 'frobnicator.3' \)
 
 Additional targets to clean out during a =make clean=
 
+*** QT GUIs
+
+mrbuild has rules to handle QT moc and =.ui= stuff. An executable that uses QT
+can be defined like this:
+
+#+BEGIN_SRC makefile
+BIN_SOURCES := gui.cc
+MOC_OBJECTS := $(patsubst %.hh,moc_%.o,$(shell grep -l Q_OBJECT *.hh))
+gui: $(MOC_OBJECTS) # gui.o will be linked in automatically
+#+END_SRC
+
+*** Manpages
+
+mrbuild knows how to install manpages, but not how to build them (this is
+usually project-specific). In my usage I do [[http://notes.secretsauce.net/notes/2018/10/23_manpages-and-readmes.html][this]], which I find quite useful.
+
+*** Python extensions
+
+mrbuild knows how to build python extension modules directly: without
+=distutils= or any such silliness. The result is that all the building is
+handled by =make=, and everything works the way it's supposed to. This is
+described in detail [[http://notes.secretsauce.net/notes/2017/11/14_python-extension-modules-without-setuptools-or-distutils.html][here]].
+
 ** More complex example
 An annotated example showing some more complex usage appears in
 [[file:build_examples/GNU_Make/Makefile]], and is copied here
@@ -260,6 +285,7 @@ An annotated example showing some more complex usage appears in
 #+BEGIN_SRC makefile
 # -*- Makefile -*-
 
+PYTHON_VERSION_FOR_EXTENSIONS := 3
 include /usr/include/mrbuild/Makefile.common.header
 
 # This is a sample Makefile using the Makefile.common infrastructure. A quick
@@ -336,8 +362,8 @@ DIST_INCLUDE        := src/*.h
 DIST_INCLUDE_EXCEPT := src/*tst*
 
 # distribute (in a 'make install' and thus into the package) all executables
-# built from BIN_SOURCES except bin/*_tst
-DIST_BIN_EXCEPT     := bin/*_tst
+# built from BIN_SOURCES except bin/*_tst. And ship the python application
+DIST_BIN := $(filter-out bin/%_tst,$(wildcard $(BIN_TARGETS))) python-tool
 
 # distribute all generated manpages in section 3 EXCEPT those for the test
 # program
@@ -347,8 +373,33 @@ DIST_MAN_EXCEPT_FINDSPEC := -type f -name '*_tst.3'
 # distribute the html documentation
 DIST_DOC := doxygen-doc/html
 
-include /usr/include/mrbuild/Makefile.common.footer
 
+# This is the manpage-generating technique from
+# http://notes.secretsauce.net/notes/2018/10/23_manpages-and-readmes.html
+#
+# generate manpages from distributed binaries, and ship them.
+DIST_MAN += $(addsuffix .1,$(DIST_BIN))
+$(DIST_MAN): %.1: %.pod
+	pod2man --center="title: does something" --name=THING --release="thing 0.1" --section=1 $< $@
+%.pod: %
+	make-pod-from-help.pl $< > $@
+	cat footer.pod >> $@
+EXTRA_CLEAN += $(DIST_MAN) $(patsubst %.1,%.pod,$(DIST_MAN))
+
+# This is the python-extension-generating technique from
+# http://notes.secretsauce.net/notes/2017/11/14_python-extension-modules-without-setuptools-or-distutils.html
+frobnicator_pywrap.o: CFLAGS += $(PY_MRBUILD_CFLAGS)
+frobnicator_pywrap.o: $(addsuffix .h,$(wildcard *.docstring))
+frobnicator/_frobnicator$(PY_EXT_SUFFIX): frobnicator_pywrap.o libfrobnicator.so
+	$(PY_MRBUILD_LINKER) $(PY_MRBUILD_LDFLAGS) $< -lfrobnicator -o $@
+# The python libraries (compiled ones and ones written in python) all live in
+# frobnicator/
+DIST_PY3_MODULES := frobnicator
+all: frobnicator/_frobnicator$(PY_EXT_SUFFIX)
+EXTRA_CLEAN += frobnicator/*.so
+
+
+include /usr/include/mrbuild/Makefile.common.footer
 #+END_SRC
 
 * MAINTAINER
