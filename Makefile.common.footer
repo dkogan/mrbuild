@@ -251,7 +251,7 @@ DIST_INCLUDE_ORIG := $(DIST_INCLUDE)
 
 DIST_BIN     = $(filter-out $(wildcard $(DIST_BIN_EXCEPT)),		\
                   $(wildcard $(or $(DIST_BIN_ORIG),    $(BIN_TARGETS))))
-DIST_INCLUDE = $(filter-out $(wildcard $(DIST_INCLUDE_EXCEPT)),		\
+DIST_INCLUDE = $(filter-out $(wildcard $(DIST_INCLUDE_EXCEPT) *.docstring.h), \
 		  $(wildcard $(DIST_INCLUDE_ORIG)))
 
 MANDIR := usr/share/man
