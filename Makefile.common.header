@@ -105,13 +105,21 @@ endef
 _PYVARS_API := $(foreach v,$(_PYVARS_LIST),PY_$v) PY_MRBUILD_CFLAGS PY_MRBUILD_LDFLAGS PY_MRBUILD_LINKER
 
 # The first time the user touches these variables, ask Python. Each subsequent
-# time, use the previously-returned value
+# time, use the previously-returned value. So we query Python at most once. If a
+# project isn't using the Python extension modules, we will not query Python at
+# all
+#
+# I handle all the Python API variables identically, except for PY_EXT_SUFFIX.
+# If Python gives me a suffix, Iuse it (this is available in python3; it has
+# ABI, architecture details). Otherwise, I try the multiarch suffix, or if even
+# THAT isn't available, just do .so. I need to handle it specially to make the
+# self-referential logic work with the memoization logic
 define _PY_DEFINE_API_VAR
 $1 = $$(or $$(_$1),$$(eval $$(query_python_extension_building_flags))$$(_$1))
 endef
-$(foreach v,$(_PYVARS_API),$(eval $(call _PY_DEFINE_API_VAR,$v)))
+define _PY_DEFINE_API_VAR_EXTSUFFIX
+$1 = $$(or $$(_$1),$$(eval $$(query_python_extension_building_flags))$$(or $$(_$1),$$(if $$(PY_MULTIARCH),.$$(PY_MULTIARCH)).so))
+endef
 
-# If I have a suffix, use it (this is available in python3. Has ABI,
-# architecture details). Otherwise, try the multiarch suffix, or if even THAT
-# isn't available, just do .so
-PY_EXT_SUFFIX := $(or $(PY_EXT_SUFFIX),$(if $(PY_MULTIARCH),.$(PY_MULTIARCH)).so)
+$(foreach v,$(filter-out PY_EXT_SUFFIX,$(_PYVARS_API)),$(eval $(call _PY_DEFINE_API_VAR,$v)))
+$(eval $(call _PY_DEFINE_API_VAR_EXTSUFFIX,PY_EXT_SUFFIX))
