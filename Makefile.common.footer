@@ -184,7 +184,7 @@ moc_%.cpp: %.hh
 # Python docstring rules. I construct these from plain ASCII files to handle
 # line wrapping
 %.docstring.h: %.docstring
-	< $^ sed 's/"/\\"/g; s/^/"/; s/$$/\\n"/;' > $@
+	< $^ sed 's/\\/\\\\/g; s/"/\\"/g; s/^/"/; s/$$/\\n"/;' > $@
 EXTRA_CLEAN += *.docstring.h
 
 
