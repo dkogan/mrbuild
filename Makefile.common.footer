@@ -240,7 +240,7 @@ ifneq (,$(filter install,$(MAKECMDGOALS)))
 What are you trying to do?)
   endif
 
-USE_DEBIAN_PATHS := $(shell grep -qi debian /etc/os-release 2>/dev/null && echo yep)
+USE_DEBIAN_PATHS := $(wildcard /etc/debian_version)
 ifneq (,$(USE_DEBIAN_PATHS))
   # we're a debian-ish box, use the multiarch dir
   DEB_HOST_MULTIARCH := $(shell dpkg-architecture -qDEB_HOST_MULTIARCH 2>/dev/null)
