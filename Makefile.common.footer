@@ -285,7 +285,7 @@ define install_rule
 $(if $(strip $($1)),
 	mkdir -p $2 &&									\
 	cp -r $($1) $2 &&								\
-	$(if $($(1)_EXCEPT_FINDSPEC),find $2 $($(1)_EXCEPT_FINDSPEC) -delete ) )
+	$(if $($(1)_EXCEPT_FINDSPEC),find $2 $($(1)_EXCEPT_FINDSPEC) -delete, true) )
 endef
 
 # Redhat wants the various manpage section get their own subdir for some reason
