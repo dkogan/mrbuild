@@ -162,8 +162,12 @@ cu_build_rule += --compiler-options "-Wall -Wextra $(CCXXFLAGS)"
 %.o: %.S
 	$(CC) $(ASFLAGS) $(CPPFLAGS) -c -o $@ $<
 
+# gengetopt rule. If we have GENGETOPT_OPTIONS, use those; otherwise use some
+# sensible defaults. If we don't have -F set an --output-dir also
 %.h %.c: %.ggo
-	gengetopt -i $< --output-dir $(dir $<) $(or $(GENGETOPT_OPTIONS), -C -u -g $(VERSION) -F $* args -f $(notdir $*) -a $(notdir $*))
+	gengetopt -i $< \
+	  $(if $(GENGETOPT_OPTIONS),$(if $(filter -F%,$(GENGETOPT_OPTIONS)),,--output-dir $(dir $<))) \
+	  $(or $(GENGETOPT_OPTIONS), -C -u -g $(VERSION) -F $* args -f $(notdir $*) -a $(notdir $*))
 
 # this is how you build QT4 UIs. There's a tool to generate headers from
 # UI definitions. There's also a tool to generate metadata from QT
