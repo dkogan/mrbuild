@@ -89,16 +89,16 @@ endef
 # I eval this to actually invoke the Python and to ingest its results. I only
 # eval this ONLY when necessary.
 define query_python_extension_building_flags
-_PYVARS := $$(shell python$(PYTHON_VERSION_FOR_EXTENSIONS) -c '$$(_PYVARS_SCRIPT)')
+_PYVARS = $(shell python$(PYTHON_VERSION_FOR_EXTENSIONS) -c '$(_PYVARS_SCRIPT)')
 # I then $(eval) these tokens one at a time, restoring the whitespace
-$$(foreach setvarcmd,$$(_PYVARS),$$(eval $$(subst __whitespace__, ,$$(setvarcmd))))
+$(foreach setvarcmd,$(_PYVARS),$(eval $(subst __whitespace__, ,$(setvarcmd))))
 # pull out flags from CC, throw out the compiler itself, since I know better
-_FLAGS_FROM_PYCC    := $$(wordlist 2,$$(words $$(_PY_CC)),$$(_PY_CC))
-_PY_MRBUILD_CFLAGS  := $$(filter-out -O%,$$(_FLAGS_FROM_PYCC) $$(_PY_CFLAGS) $$(_PY_CCSHARED) -I$$(_PY_INCLUDEPY))
+_FLAGS_FROM_PYCC    = $(wordlist 2,$(words $(_PY_CC)),$(_PY_CC))
+_PY_MRBUILD_CFLAGS  = $(filter-out -O%,$(_FLAGS_FROM_PYCC) $(_PY_CFLAGS) $(_PY_CCSHARED) -I$(_PY_INCLUDEPY))
 # I add an RPATH to the python extension DSO so that it runs in-tree. Will pull
 # it out at install time
-_PY_MRBUILD_LDFLAGS := $$(_PY_LDFLAGS) -L$$(abspath .) -Wl,-rpath=$$(abspath .)
-_PY_MRBUILD_LINKER  := $$(_PY_BLDSHARED) $$(_PY_BLDLIBRARY)
+_PY_MRBUILD_LDFLAGS = $(_PY_LDFLAGS) -L$(abspath .) -Wl,-rpath=$(abspath .)
+_PY_MRBUILD_LINKER  = $(_PY_BLDSHARED) $(_PY_BLDLIBRARY)
 endef
 
 # List of variables a user Makefile could touch
@@ -115,10 +115,10 @@ _PYVARS_API := $(foreach v,$(_PYVARS_LIST),PY_$v) PY_MRBUILD_CFLAGS PY_MRBUILD_L
 # THAT isn't available, just do .so. I need to handle it specially to make the
 # self-referential logic work with the memoization logic
 define _PY_DEFINE_API_VAR
-$1 = $$(or $$(_$1),$$(eval $$(query_python_extension_building_flags))$$(_$1))
+$1 = $$(or $$(_$1),$$(eval $$(value query_python_extension_building_flags))$$(_$1))
 endef
 define _PY_DEFINE_API_VAR_EXTSUFFIX
-$1 = $$(or $$(_$1),$$(eval $$(query_python_extension_building_flags))$$(or $$(_$1),$$(if $$(PY_MULTIARCH),.$$(PY_MULTIARCH)).so))
+$1 = $$(or $$(_$1),$$(eval $$(value query_python_extension_building_flags))$$(or $$(_$1),$$(if $$(PY_MULTIARCH),.$$(PY_MULTIARCH)).so))
 endef
 
 $(foreach v,$(filter-out PY_EXT_SUFFIX,$(_PYVARS_API)),$(eval $(call _PY_DEFINE_API_VAR,$v)))
