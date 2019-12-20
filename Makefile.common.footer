@@ -214,11 +214,22 @@ $(LIB_TARGET_SO_FULL): $(LIB_OBJECTS)
 	$(CC_LINKER) $(LDFLAGS) $(filter %.o, $^) $(filter-out %.o, $^) $(LDLIBS) -o $@
 
 # I make sure to give the .o to the linker before the .so and everything else.
-# The .o may depend on the other stuff. The binaries get an rpath (removed at
-# install time). Here $^ contains two flavors of LIB_TARGET (see next stanza),
-# so I manually remove one
+# The .o may depend on the other stuff.
+#
+# The binaries get an RPATH (removed at install time). I use a relative RPATH
+# (using $ORIGIN) to make the build reproducible: chrpath doesn't remove the
+# actual RPATH string from the binary, and the local build directory gets
+# embedded in the output
+#
+# Here $^ contains two flavors of LIB_TARGET (see next stanza), so I manually
+# remove one
+SPACE :=
+SPACE := $(SPACE) $(SPACE)
+dirs_to_dotdot = $(subst $(SPACE),/,$(patsubst %,..,$(subst /, ,$1)))
+get_parentdir_relative_to_childdir = /$(call dirs_to_dotdot,$(patsubst $1%,%,$2))
+
 $(BIN_TARGETS): %: %.o
-	$(CC_LINKER) -Wl,-rpath=$(abspath .) $(LDFLAGS) $(filter %.o, $^) $(filter-out $(LIB_TARGET_SO_ABI),$(filter-out %.o, $^)) $(LDLIBS) -o $@
+	$(CC_LINKER) -Wl,-rpath='$$ORIGIN'$(call get_parentdir_relative_to_childdir,$(abspath .),$(dir $(abspath $@))) $(LDFLAGS) $(filter %.o, $^) $(filter-out $(LIB_TARGET_SO_ABI),$(filter-out %.o, $^)) $(LDLIBS) -o $@
 
 # The binaries link with the DSO, if there is one. I need the libxxx.so to build
 # the binary, and I need the libxxx.so.abi to run it.

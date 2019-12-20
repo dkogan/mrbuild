@@ -95,9 +95,13 @@ $(foreach setvarcmd,$(_PYVARS),$(eval $(subst __whitespace__, ,$(setvarcmd))))
 # pull out flags from CC, throw out the compiler itself, since I know better
 _FLAGS_FROM_PYCC    = $(wordlist 2,$(words $(_PY_CC)),$(_PY_CC))
 _PY_MRBUILD_CFLAGS  = $(filter-out -O%,$(_FLAGS_FROM_PYCC) $(_PY_CFLAGS) $(_PY_CCSHARED) -I$(_PY_INCLUDEPY))
-# I add an RPATH to the python extension DSO so that it runs in-tree. Will pull
-# it out at install time
-_PY_MRBUILD_LDFLAGS = $(_PY_LDFLAGS) -L$(abspath .) -Wl,-rpath=$(abspath .)
+
+SPACE :=
+SPACE := $(SPACE) $(SPACE)
+dirs_to_dotdot = $(subst $(SPACE),/,$(patsubst %,..,$(subst /, ,$1)))
+get_parentdir_relative_to_childdir = /$(call dirs_to_dotdot,$(patsubst $1%,%,$2))
+
+_PY_MRBUILD_LDFLAGS = $(_PY_LDFLAGS) -L$(abspath .) -Wl,-rpath='$$ORIGIN'$(call get_parentdir_relative_to_childdir,$(abspath .),$(dir $(abspath $@)))
 _PY_MRBUILD_LINKER  = $(_PY_BLDSHARED) $(_PY_BLDLIBRARY)
 endef
 
