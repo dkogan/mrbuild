@@ -101,7 +101,7 @@ _PY_MRBUILD_LDFLAGS = $(_PY_LDFLAGS) -L$(abspath .) -Wl,-rpath=$(abspath .)
 _PY_MRBUILD_LINKER  = $(_PY_BLDSHARED) $(_PY_BLDLIBRARY)
 endef
 
-# List of variables a user Makefile could touch
+# List of variables a user Makefile could touch. These are all PY_...
 _PYVARS_API := $(foreach v,$(_PYVARS_LIST),PY_$v) PY_MRBUILD_CFLAGS PY_MRBUILD_LDFLAGS PY_MRBUILD_LINKER
 
 # The first time the user touches these variables, ask Python. Each subsequent
@@ -110,7 +110,7 @@ _PYVARS_API := $(foreach v,$(_PYVARS_LIST),PY_$v) PY_MRBUILD_CFLAGS PY_MRBUILD_L
 # all
 #
 # I handle all the Python API variables identically, except for PY_EXT_SUFFIX.
-# If Python gives me a suffix, Iuse it (this is available in python3; it has
+# If Python gives me a suffix, I use it (this is available in python3; it has
 # ABI, architecture details). Otherwise, I try the multiarch suffix, or if even
 # THAT isn't available, just do .so. I need to handle it specially to make the
 # self-referential logic work with the memoization logic
@@ -126,8 +126,8 @@ $(eval $(call _PY_DEFINE_API_VAR_EXTSUFFIX,PY_EXT_SUFFIX))
 
 
 
-# Useful to pull in a local build of some library. Sets the compiler and linker
-# (runtime and build-time) flags. Invoke like this:
+# Useful to pull in a local build of some library. For testing. Sets the
+# compiler and linker (runtime and build-time) flags. Invoke like this:
 #   $(eval $(call add_local_library_path,/home/user/library))
 define add_local_library_path
 CFLAGS   += -I$1
