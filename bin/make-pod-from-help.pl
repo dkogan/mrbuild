@@ -73,10 +73,19 @@ $helpstring = ${^POSTMATCH};
 $synopsis =~ s/\n*$//g; # cull trailing whitespace
 
 # Now a description: everything until 'xxxx arguments'. I might not have a
-# description at all
-my ($description, $post) = $helpstring =~ /(^.*?)(?:\n\n)?(\w+ arguments:?\n)/ips
-  or die "Couldn't parse description";
-$helpstring = $post . ${^POSTMATCH};
+# description at all. I might also not have any "arguments" sections.
+my ($description, $post) = $helpstring =~ /(^.*?)(?:\n\n)?(\w+ arguments:?\n)/ips;
+if( defined $description)
+{
+    $helpstring = $post . ${^POSTMATCH};
+}
+else
+{
+    # no arguments. Everything is a description.
+    $description = $helpstring;
+    $helpstring = '';
+}
+
 
 # Now the arguments
 my @args;
@@ -113,14 +122,16 @@ if( $description )
     say "$description\n";
 }
 
-say "=head1 OPTIONS\n";
-for my $arg (@args)
+if(@args)
 {
-    my ($kind,$what) = @$arg;
-    say "=head2 $kind\n";
-    say "$what\n";
+    say "=head1 OPTIONS\n";
+    for my $arg (@args)
+    {
+        my ($kind,$what) = @$arg;
+        say "=head2 $kind\n";
+        say "$what\n";
+    }
 }
-
 
 
 __END__
