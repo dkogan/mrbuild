@@ -52,7 +52,7 @@ my $helpstring = `$path --help`;
 # ...
 
 # usage is the thing up to the first blank line
-my ($usage) = $helpstring =~ m/(^usage.*?)\n\n/msp
+my ($usage) = $helpstring =~ m/(^usage.*?)\n\n/imsp
   or die "Couldn't parse out the usage";
 $helpstring = ${^POSTMATCH};
 
