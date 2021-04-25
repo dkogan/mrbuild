@@ -145,15 +145,14 @@ VERSION string.
 
 - =LIB_SOURCES=
 
-Sources to build into a library. May contain wildcards. If omitted, no library
-will be built.
+Sources to build into a library. If omitted, no library will be built.
 
 - =BIN_SOURCES=
 
 Sources to build into executables. By default each executable will be built from
 the library and each source in =BIN_SOURCES=. So if we have =a.c= and =b.c= in
 =BIN_SOURCES=, then two executables will be built: =a= and =b=, each linking in
-the library. May contain wildcards.
+the library.
 
 - =CFLAGS=, =CXXFLAGS=, =CCXXFLAGS=, =CPPFLAGS=
 
