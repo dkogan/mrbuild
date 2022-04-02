@@ -95,7 +95,8 @@ my $helpstring4 = $helpstring;
 my @args;
 while($helpstring !~ /^\s*$/)
 {
-    my ($argument_kind) = $helpstring =~ /(^\w+ arguments):?\n\n?/pi
+    # I see "required arguments" or "optional arguments" or "options"
+    my ($argument_kind) = $helpstring =~ /(^\w+ arguments|options):?\n\n?/pi
       or die "Couldn't parse out argument kind; helpstring='$helpstring'; helpstring0='$helpstring0'; helpstring1='$helpstring1'; helpstring2='$helpstring2'; helpstring3='$helpstring3'; helpstring4='$helpstring4'";
     $helpstring = ${^POSTMATCH};
     my $helpstring5 = $helpstring;
@@ -135,6 +136,8 @@ if(@args)
     for my $arg (@args)
     {
         my ($kind,$what) = @$arg;
+        $kind = "OPTIONAL ARGUMENTS" if $kind eq "OPTIONS";
+
         say "=head2 $kind\n";
         say linkify($what);
         say "";
