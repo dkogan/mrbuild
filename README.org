@@ -11,14 +11,16 @@ ABI_VERSION  := 0
 TAIL_VERSION := 1
 
 # Build all .c sources into a library: libfoo. If all library sources are in
-# src/, you can put src/*.c here
-LIB_SOURCES := *.c
+# src/, you can put $(wildcard src/*.c() here. Raw wildcards are not allowed in
+# LIB_SOURCES
+LIB_SOURCES := $(wildcard *.c)
 
 # build executable foo_tst from foo_tst.cc; it will be linked with libfoo
 # build executable foo_run from foo_run.cc; it will be linked with libfoo
 #
 # These should be separate from LIB_SOURCES. If all non-library sources are in
-# bin/, you can put bin/*.c here
+# bin/, you can put $(wildcard bin/*.c) here. Raw wildcards are not allowed in
+# BIN_SOURCES
 BIN_SOURCES := foo_tst.c foo_run.c
 
 # Any extra flags. The build system always builds with debugging information and
@@ -145,14 +147,15 @@ VERSION string.
 
 - =LIB_SOURCES=
 
-Sources to build into a library. If omitted, no library will be built.
+Sources to build into a library. If omitted, no library will be built. Wildcards
+are /not/ allowed
 
 - =BIN_SOURCES=
 
 Sources to build into executables. By default each executable will be built from
 the library and each source in =BIN_SOURCES=. So if we have =a.c= and =b.c= in
 =BIN_SOURCES=, then two executables will be built: =a= and =b=, each linking in
-the library.
+the library. Wildcards are /not/ allowed
 
 - =CFLAGS=, =CXXFLAGS=, =CCXXFLAGS=, =CPPFLAGS=
 
@@ -303,10 +306,10 @@ ABI_VERSION  := 0
 TAIL_VERSION := 1
 
 # Build all C and C++ sources in src/ into the library
-LIB_SOURCES := src/*.c*
+LIB_SOURCES := $(wildcard src/*.c*)
 
 # Build all C and C++ sources in bin/ into separate executables
-BIN_SOURCES := bin/*.c*
+BIN_SOURCES := $(wildcard bin/*.c*)
 
 # If bin/run_foo.c exists, it is picked up in BIN_SOURCES, and the bin/run_foo
 # executable will be built from the library and bin/run_foo.o (built from
