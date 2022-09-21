@@ -24,8 +24,9 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-# Debug helpers
+# Debug and helpers
 print-%  : ; @echo $*=$($*)
+UC = $(shell echo '$(1)' | tr '[:lower:]' '[:upper:]')
 
 # OS Detection
 # https://stackoverflow.com/questions/714100/os-detecting-makefile
@@ -37,7 +38,7 @@ else
     detected_os := $(shell uname -s)
 endif
 $(info Operating System: ${detected_os})
-
+CFLAGS    += -DOS_$(call UC,$(detected_os))
 
 ifeq ($(detected_os),Linux)
     detected_distro := $(shell lsb_release -si)
@@ -48,6 +49,7 @@ ifeq ($(detected_os),Linux)
 endif
 ifneq ($(detected_distro),)
     $(info Distribution: ${detected_distro})
+CFLAGS += -DDISTRO_$(call UC,$(detected_distro))
 endif
 
 
