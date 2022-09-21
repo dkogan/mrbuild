@@ -24,6 +24,35 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+# Debug and helpers
+print-%  : ; @echo $*=$($*)
+UC = $(shell echo '$(1)' | tr '[:lower:]' '[:upper:]')
+
+# OS Detection
+# https://stackoverflow.com/questions/714100/os-detecting-makefile
+# Can probably cull a lot of these, just provided for concept at the moment
+ifeq ($(OS),Windows_NT)
+    # We are on Windows! Not going to support this yet (if ever!) so good luck...
+    detected_os := Windows
+else
+    detected_os := $(shell uname -s)
+endif
+$(info Operating System: ${detected_os})
+CFLAGS    += -DOS_$(call UC,$(detected_os))
+
+ifeq ($(detected_os),Linux)
+    detected_distro := $(shell lsb_release -si)
+    ifeq ($(detected_distro),Debian)
+    else ifeq ($(detected_distro),Ubuntu)
+    else ifeq ($(detected_distro),Arch)
+    endif
+endif
+ifneq ($(detected_distro),)
+    $(info Distribution: ${detected_distro})
+CFLAGS += -DDISTRO_$(call UC,$(detected_distro))
+endif
+
+
 # This stuff defines variables (PY_EXT_SUFFIX) that could be used by the user
 # Makefile at parsing time. So this must be included BEFORE the rest of the user
 # Makefile
@@ -170,8 +199,6 @@ CFLAGS   += -I$1
 CXXFLAGS += -I$1
 LDFLAGS += -L$1 -Wl,-rpath=$1
 endef
-
-
 
 
 #### VERSION_FROM_PROJECT variable: parse git tags or, if those aren't
