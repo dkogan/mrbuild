@@ -226,6 +226,9 @@ $(BIN_TARGETS): %: %.o
 # the binary, and I need the libxxx.so.abi to run it.
 $(BIN_TARGETS): $(if $(strip $(LIB_SOURCES)),$(LIB_TARGET_SO_BARE) $(LIB_TARGET_SO_ABI))
 
+%.so.dump: %.so
+	abi-dumper $< -o $@
+EXTRA_CLEAN += *.so.dump
 
 
 
