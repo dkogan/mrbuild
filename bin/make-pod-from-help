@@ -156,11 +156,11 @@ __END__
 
 =head1 NAME
 
-make-pod-from-help.pl - creates POD documentation from a commandline tool
+make-pod-from-help - creates POD documentation from a commandline tool
 
 =head1 SYNOPSIS
 
- $ ./make-pod-from-help.pl frobnicate > frobnicate.pod
+ $ make-pod-from-help frobnicate > frobnicate.pod
 
 =head1 DESCRIPTION
 
