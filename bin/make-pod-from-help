@@ -164,13 +164,8 @@ make-pod-from-help - creates POD documentation from a commandline tool
 
 =head1 DESCRIPTION
 
-Python has a culture of ignoring standard ways of doing things, and building
-their own everything from scratch for some reason. And as a result I need to
-write this tool to give me manpages. This tool is a hack that works for THIS
-project. A core assumption is that running the tool with C<--help> produces
-fairly complete documentation, and I just need to massage it. My tools all have
-a manpage-like docstring, use C<argparse> to document the options, and tell
-C<argparse> to use the docstring in the C<--help> description.
+This tool produces a POD from a C<--help> string. Primarily it's intended to
+work with Python tools using argparse.
 
 This tool generates a POD, which can then be made into a manpage with
 C<pod2man>.
