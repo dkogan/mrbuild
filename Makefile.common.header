@@ -193,12 +193,26 @@ _VERSION_STRIP_LEADING_V            := s/^v//g
 
 # If user says "VERSION_USE_LATEST_TAG=1 make" I'll use the latest tag for the
 # version, without annotations about the subsequent commits
-_VERSION = $(shell test -d .git && \
-  git describe --tags | \
-    perl -pe '$(if $(VERSION_USE_LATEST_TAG),$(_VERSION_STRIP_POST_TAG_ANNOTATIONS)); \
-              $(_VERSION_STRIP_LEADING_PATH);         \
-              $(_VERSION_STRIP_LEADING_V);' || \
-  < debian/changelog sed -n 's/.*(\([0-9\.]*[0-9]\).*).*/\1/; p; q;')
+_VERSION = $(shell test -d .git								\
+  && (											\
+    git describe --tags >/dev/null 2>/dev/null						\
+    && (										\
+      git describe --tags |								\
+      perl -pe '$(if $(VERSION_USE_LATEST_TAG),$(_VERSION_STRIP_POST_TAG_ANNOTATIONS));	\
+		$(_VERSION_STRIP_LEADING_PATH);						\
+		$(_VERSION_STRIP_LEADING_V);'						\
+    ) || (										\
+      echo "VERSION_UNKNOWN"								\
+    )											\
+  ) || (										\
+    test -e debian/changelog								\
+    && (										\
+      < debian/changelog sed -n 's/.*(\([0-9\.]*[0-9]\).*).*/\1/; p; q;'		\
+    ) || (										\
+      echo "VERSION_UNKNOWN"								\
+    )											\
+  ) )
+
 # Memoize. $(VERSION) will evaluate the result the first time, and use the
 # cached result during subsequent calls
 VERSION_FROM_PROJECT = $(if $(_VERSION_EXPANDED),,$(eval _VERSION_EXPANDED:=$$(_VERSION)))$(_VERSION_EXPANDED)
