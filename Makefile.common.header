@@ -193,25 +193,20 @@ _VERSION_STRIP_LEADING_V            := s/^v//g
 
 # If user says "VERSION_USE_LATEST_TAG=1 make" I'll use the latest tag for the
 # version, without annotations about the subsequent commits
-_VERSION = $(shell test -d .git								\
-  && (											\
-    git describe --tags >/dev/null 2>/dev/null						\
-    && (										\
-      git describe --tags |								\
-      perl -pe '$(if $(VERSION_USE_LATEST_TAG),$(_VERSION_STRIP_POST_TAG_ANNOTATIONS));	\
-		$(_VERSION_STRIP_LEADING_PATH);						\
-		$(_VERSION_STRIP_LEADING_V);'						\
-    ) || (										\
-      echo "VERSION_UNKNOWN"								\
-    )											\
-  ) || (										\
-    test -e debian/changelog								\
-    && (										\
-      < debian/changelog sed -n 's/.*(\([0-9\.]*[0-9]\).*).*/\1/; p; q;'		\
-    ) || (										\
-      echo "VERSION_UNKNOWN"								\
-    )											\
-  ) )
+PAREN0 := (
+PAREN1 := )
+_VERSION = $(shell															\
+  if test -e debian/changelog; then													\
+      < debian/changelog perl -ane 'if($$F[1] =~ /^\$(PAREN0)(.+)\$(PAREN1)$$/) { print $$1 } else { print "VERSION_UNKNOWN"}; exit 0';	\
+  elif test -d .git && git describe --tags >/dev/null 2>/dev/null; then									\
+      git describe --tags |														\
+      perl -pe '$(if $(VERSION_USE_LATEST_TAG),$(_VERSION_STRIP_POST_TAG_ANNOTATIONS));							\
+		$(_VERSION_STRIP_LEADING_PATH);												\
+		$(_VERSION_STRIP_LEADING_V);';												\
+  else																	\
+    echo "VERSION_UNKNOWN";														\
+  fi																	\
+)
 
 # Memoize. $(VERSION) will evaluate the result the first time, and use the
 # cached result during subsequent calls
