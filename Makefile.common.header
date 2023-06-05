@@ -183,7 +183,7 @@ endef
 #### is useful in mature-ish projects that are actually being distributed to
 #### others
 # "git describe --tags" says things like "v2.0-17-gcef328f". This converts it to "v2.0"
-_VERSION_STRIP_POST_TAG_ANNOTATIONS := s/-\d+-g[0-9a-f]{7}$$//
+_VERSION_STRIP_POST_TAG_ANNOTATIONS := s/-\d+-g[0-9a-f]+$$//
 # I might have a tag such as "debian/2.0-1". This converts it to "2.0-1"
 _VERSION_STRIP_LEADING_PATH         := s/^.*\///
 # I might have a tag such as "v2.0". This converts it to "2.0"
