@@ -154,7 +154,7 @@ define _PY_DEFINE_API_VAR
 $1 = $$(or $$(_$1),$$(eval $$(value query_python_extension_building_flags))$$(_$1))
 endef
 define _PY_DEFINE_API_VAR_EXTSUFFIX
-$1 = $$(or $$(_$1),$$(eval $$(value query_python_extension_building_flags))$$(or $$(_$1),$$(if $$(PY_MULTIARCH),.$$(PY_MULTIARCH)).so))
+$1 = $$(or $$(_$1),$$(eval $$(value query_python_extension_building_flags))$$(or $$(_$1),$$(if $$(PY_MULTIARCH),.$$(PY_MULTIARCH)).$$(SO)))
 endef
 
 $(foreach v,$(filter-out PY_EXT_SUFFIX,$(_PYVARS_API)),$(eval $(call _PY_DEFINE_API_VAR,$v)))

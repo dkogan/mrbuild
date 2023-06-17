@@ -64,6 +64,10 @@ $(foreach v,$(MUST_DEF_VARIABLES),$(if $($v),,$(error User MUST specify $v)))
 # whatever they like
 VERSION ?= $(ABI_VERSION).$(TAIL_VERSION)
 
+# osx
+COND_DARWIN := $(filter Darwin,$(shell uname -s))
+SO          := $(if $(COND_DARWIN),dylib,so)
+
 # Default compilers. By default, we use g++ as a linker
 CC        ?= gcc
 CXX       ?= g++
@@ -90,7 +94,7 @@ SOURCE_DIRS := $(sort ./ $(dir $(LIB_SOURCES) $(BIN_SOURCES)))
 # if the PROJECT_NAME is libxxx then LIB_NAME is libxxx
 # if the PROJECT_NAME is xxx    then LIB_NAME is libxxx
 LIB_NAME           := $(or $(filter lib%,$(PROJECT_NAME)),lib$(PROJECT_NAME))
-LIB_TARGET_SO_BARE := $(LIB_NAME).so
+LIB_TARGET_SO_BARE := $(LIB_NAME).$(SO)
 LIB_TARGET_SO_ABI  := $(LIB_TARGET_SO_BARE).$(ABI_VERSION)
 LIB_TARGET_SO_FULL := $(LIB_TARGET_SO_ABI).$(TAIL_VERSION)
 LIB_TARGET_SO_ALL  := $(LIB_TARGET_SO_BARE) $(LIB_TARGET_SO_ABI) $(LIB_TARGET_SO_FULL)
@@ -190,9 +194,14 @@ all: $(if $(strip $(LIB_SOURCES)),$(LIB_TARGET_SO_ALL)) $(if $(strip $(BIN_SOURC
 .PHONY: all
 .DEFAULT_GOAL := all
 
-# use --default-symver if we've got it. *BSDs do not
-LD_DEFAULT_SYMVER := $(shell ld --default-symver --version 1>/dev/null 2>/dev/null && echo -Wl,--default-symver)
-$(LIB_TARGET_SO_FULL): LDFLAGS += -shared $(LD_DEFAULT_SYMVER) -fPIC -Wl,-soname,$(notdir $(LIB_TARGET_SO_BARE)).$(ABI_VERSION)
+ifneq ($(COND_DARWIN),)
+  $(LIB_TARGET_SO_FULL): LDFLAGS += -dynamiclib -flat_namespace -fPIC
+else
+  # use --default-symver if we've got it. *BSDs do not
+  LD_DEFAULT_SYMVER := $(shell ld --default-symver --version 1>/dev/null 2>/dev/null && echo -Wl,--default-symver)
+  $(LIB_TARGET_SO_FULL): LDFLAGS += -shared $(LD_DEFAULT_SYMVER) -fPIC -Wl,-soname,$(notdir $(LIB_TARGET_SO_BARE)).$(ABI_VERSION)
+endif
+
 
 
 $(LIB_TARGET_SO_BARE) $(LIB_TARGET_SO_ABI): $(LIB_TARGET_SO_FULL)
@@ -219,21 +228,22 @@ SPACE := $(SPACE) $(SPACE)
 dirs_to_dotdot = $(subst $(SPACE),/,$(patsubst %,..,$(subst /, ,$1)))
 get_parentdir_relative_to_childdir = /$(call dirs_to_dotdot,$(patsubst $1%,%,$2))
 
+RPATH_OPTION = -Wl,-rpath='$$ORIGIN'$(call get_parentdir_relative_to_childdir,$(abspath .),$(dir $(abspath $@)))
 $(BIN_TARGETS): %: %.o
-	$(CC_LINKER) -Wl,-rpath='$$ORIGIN'$(call get_parentdir_relative_to_childdir,$(abspath .),$(dir $(abspath $@))) $(LDFLAGS) $(filter %.o, $^) $(filter-out $(LIB_TARGET_SO_ABI),$(filter-out %.o, $^)) $(LDLIBS) -o $@
+	$(CC_LINKER) $(if $(COND_DARWIN),,$(RPATH_OPTION)) $(LDFLAGS) $(filter %.o, $^) $(filter-out $(LIB_TARGET_SO_ABI),$(filter-out %.o, $^)) $(LDLIBS) -o $@
 
 # The binaries link with the DSO, if there is one. I need the libxxx.so to build
 # the binary, and I need the libxxx.so.abi to run it.
 $(BIN_TARGETS): $(if $(strip $(LIB_SOURCES)),$(LIB_TARGET_SO_BARE) $(LIB_TARGET_SO_ABI))
 
-%.so.dump: %.so
+%.$(SO).dump: %.$(SO)
 	abi-dumper $< -o $@
-EXTRA_CLEAN += *.so.dump
+EXTRA_CLEAN += *.$(SO).dump
 
 
 
 clean:
-	rm -rf $(foreach d,$(SOURCE_DIRS),$(addprefix $d,*.a *.o *.so *.so.* *.d moc_* ui_*.h*)) $(BIN_TARGETS) $(foreach s,.c .h,$(addsuffix $s,$(basename $(shell find . -name '*.ggo')))) $(EXTRA_CLEAN)
+	rm -rf $(foreach d,$(SOURCE_DIRS),$(addprefix $d,*.a *.o *.$(SO) *.$(SO).* *.d moc_* ui_*.h*)) $(BIN_TARGETS) $(foreach s,.c .h,$(addsuffix $s,$(basename $(shell find . -name '*.ggo')))) $(EXTRA_CLEAN)
 distclean: clean
 
 .PHONY: distclean clean
@@ -340,16 +350,18 @@ endif
         # This is required because Make can't deal with : in rules
 	for fil in `find $(DESTDIR) -name '*__colon__*'`; do mv $$fil `echo $$fil | sed s/__colon__/:/g`; done
 
+        # Don't mess with rpaths on a mac. They don't have them, or something
+ifeq ($(COND_DARWIN),)
         # Remove rpaths from everything. /usr/bin is allowed to fail because
         # some of those executables aren't ELFs. On the other hand, any .so we
         # find IS en ELF. Those could live in a number of places, since they
         # could be extension modules for the various languages, and I thus look
         # for those EVERYWHERE
-ifneq ($(strip $(DIST_BIN)),)
+  ifneq ($(strip $(DIST_BIN)),)
 	chrpath -d $(DESTDIR)/usr/bin/* 2>/dev/null || true
+  endif
+	find $(DESTDIR) -name '*.$(SO)' | xargs chrpath -d
 endif
-	find $(DESTDIR) -name '*.so' | xargs chrpath -d
-
         # Any perl programs need their binary path stuff stripped out. This
         # exists to let these run in-tree, but needs to be removed at
         # install-time (similar to an RPATH)
