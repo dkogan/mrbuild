@@ -64,10 +64,6 @@ $(foreach v,$(MUST_DEF_VARIABLES),$(if $($v),,$(error User MUST specify $v)))
 # whatever they like
 VERSION ?= $(ABI_VERSION).$(TAIL_VERSION)
 
-# osx
-COND_DARWIN := $(filter Darwin,$(shell uname -s))
-SO          := $(if $(COND_DARWIN),dylib,so)
-
 # Default compilers. By default, we use g++ as a linker
 CC        ?= gcc
 CXX       ?= g++
