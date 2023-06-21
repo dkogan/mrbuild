@@ -191,7 +191,7 @@ all: $(if $(strip $(LIB_SOURCES)),$(LIB_TARGET_SO_ALL)) $(if $(strip $(BIN_SOURC
 .DEFAULT_GOAL := all
 
 ifneq ($(COND_DARWIN),)
-  $(LIB_TARGET_SO_FULL): LDFLAGS += -dynamiclib -flat_namespace -fPIC
+  $(LIB_TARGET_SO_FULL): LDFLAGS += -dynamiclib -fPIC
 else
   # use --default-symver if we've got it. *BSDs do not
   LD_DEFAULT_SYMVER := $(shell ld --default-symver --version 1>/dev/null 2>/dev/null && echo -Wl,--default-symver)
