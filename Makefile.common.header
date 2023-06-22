@@ -143,6 +143,7 @@ _PY_MRBUILD_LDFLAGS = $(_PY_LDFLAGS) -L$(abspath .)
 ifeq ($(COND_DARWIN),)
 _PY_MRBUILD_LDFLAGS += -Wl,-rpath,'$$ORIGIN'$(call get_parentdir_relative_to_childdir,$(abspath .),$(dir $(abspath $@)))
 endif
+RPATH_OPTION = -Wl,-rpath,'$$ORIGIN'$(call get_parentdir_relative_to_childdir,$(abspath .),$(dir $(abspath $@)))
 
 _PY_MRBUILD_LINKER  = $(_PY_BLDSHARED) $(_PY_BLDLIBRARY)
 endef

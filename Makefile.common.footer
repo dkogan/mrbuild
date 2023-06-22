@@ -219,7 +219,6 @@ $(LIB_TARGET_SO_FULL): $(LIB_OBJECTS)
 #
 # Here $^ contains two flavors of LIB_TARGET (see next stanza), so I manually
 # remove one
-RPATH_OPTION = -Wl,-rpath,'$$ORIGIN'$(call get_parentdir_relative_to_childdir,$(abspath .),$(dir $(abspath $@)))
 $(BIN_TARGETS): %: %.o
 	$(CC_LINKER) $(if $(COND_DARWIN),,$(RPATH_OPTION)) $(LDFLAGS) $(filter %.o, $^) $(filter-out $(LIB_TARGET_SO_ABI),$(filter-out %.o, $^)) $(LDLIBS) -o $@
 
