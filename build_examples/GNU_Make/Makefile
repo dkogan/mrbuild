@@ -3,9 +3,10 @@
 PYTHON_VERSION_FOR_EXTENSIONS := 3
 include /usr/include/mrbuild/Makefile.common.header
 
-# This is a sample Makefile using the Makefile.common infrastructure. A quick
-# way to bootstrap a new project is to copy this file to the root directory of
-# the project and then to modify each variable to fit that particular project.
+# This is a sample Makefile using the Makefile.common.header,
+# Makefile.common.footer infrastructure. A quick way to bootstrap a new project
+# is to copy this file to the root directory of the project and then to modify
+# each variable to fit that particular project.
 
 # The name of the project. By convention, libraries should be called lib... but
 # this isn't required
