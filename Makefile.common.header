@@ -141,7 +141,7 @@ get_parentdir_relative_to_childdir = /$(call dirs_to_dotdot,$(patsubst $1%,%,$2)
 
 _PY_MRBUILD_LDFLAGS = $(_PY_LDFLAGS) -L$(abspath .)
 ifeq ($(COND_DARWIN),)
-_PY_MRBUILD_LDFLAGS += -Wl,-rpath='$$ORIGIN'$(call get_parentdir_relative_to_childdir,$(abspath .),$(dir $(abspath $@)))
+_PY_MRBUILD_LDFLAGS += -Wl,-rpath,'$$ORIGIN'$(call get_parentdir_relative_to_childdir,$(abspath .),$(dir $(abspath $@)))
 endif
 
 _PY_MRBUILD_LINKER  = $(_PY_BLDSHARED) $(_PY_BLDLIBRARY)
@@ -180,7 +180,7 @@ CFLAGS   += -I$1
 CXXFLAGS += -I$1
 LDFLAGS  += -L$1
 ifeq ($(COND_DARWIN),)
-LDFLAGS += -Wl,-rpath=$1
+LDFLAGS += -Wl,-rpath,$1
 endif
 endef
 
