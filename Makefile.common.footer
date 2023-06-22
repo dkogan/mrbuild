@@ -220,7 +220,7 @@ $(LIB_TARGET_SO_FULL): $(LIB_OBJECTS)
 # Here $^ contains two flavors of LIB_TARGET (see next stanza), so I manually
 # remove one
 $(BIN_TARGETS): %: %.o
-	$(CC_LINKER) $(if $(COND_DARWIN),,$(RPATH_OPTION)) $(LDFLAGS) $(filter %.o, $^) $(filter-out $(LIB_TARGET_SO_ABI),$(filter-out %.o, $^)) $(LDLIBS) -o $@
+	$(CC_LINKER) $(RPATH_OPTION) $(LDFLAGS) $(filter %.o, $^) $(filter-out $(LIB_TARGET_SO_ABI),$(filter-out %.o, $^)) $(LDLIBS) -o $@
 
 # The binaries link with the DSO, if there is one. I need the libxxx.so to build
 # the binary, and I need the libxxx.so.abi to run it.
@@ -340,7 +340,6 @@ endif
         # This is required because Make can't deal with : in rules
 	for fil in `find $(DESTDIR) -name '*__colon__*'`; do mv $$fil `echo $$fil | sed s/__colon__/:/g`; done
 
-        # Don't mess with rpaths on a mac. They don't have them, or something
 ifeq ($(COND_DARWIN),)
         # Remove rpaths from everything. /usr/bin is allowed to fail because
         # some of those executables aren't ELFs. On the other hand, any .so we
