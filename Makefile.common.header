@@ -139,7 +139,14 @@ SPACE := $(SPACE) $(SPACE)
 dirs_to_dotdot = $(subst $(SPACE),/,$(patsubst %,..,$(subst /, ,$1)))
 get_parentdir_relative_to_childdir = /$(call dirs_to_dotdot,$(patsubst $1%,%,$2))
 
-RPATH_OPTION = -Wl,-rpath,$(if $(COND_DARWIN),@executable_path,'$$ORIGIN')$(call get_parentdir_relative_to_childdir,$(abspath .),$(dir $(abspath $@)))
+RPATH_SUFFIX = $(call get_parentdir_relative_to_childdir,$(abspath .),$(dir $(abspath $@)))
+ifeq ($(COND_DARWIN),)
+  RPATH = '$$ORIGIN'$(RPATH_SUFFIX)
+else
+  RPATH = @executable_path$(RPATH_SUFFIX)
+endif
+
+RPATH_OPTION = -Wl,-rpath,$(RPATH)
 
 _PY_MRBUILD_LDFLAGS = $(RPATH_OPTION) $(_PY_LDFLAGS) -L$(abspath .)
 
