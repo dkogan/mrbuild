@@ -190,10 +190,10 @@ all: $(if $(strip $(LIB_SOURCES)),$(LIB_TARGET_SO_ALL)) $(if $(strip $(BIN_SOURC
 .PHONY: all
 .DEFAULT_GOAL := all
 
-ifneq ($(COND_DARWIN),)
-  $(LIB_TARGET_SO_FULL): LDFLAGS += -dynamiclib
-else
+ifeq ($(COND_DARWIN),)
   $(LIB_TARGET_SO_FULL): LDFLAGS += -Wl,--default-symver
+else
+  $(LIB_TARGET_SO_FULL): LDFLAGS += -dynamiclib
 endif
 
 $(LIB_TARGET_SO_FULL): LDFLAGS += -shared -fPIC -Wl,$(if $(COND_DARWIN),-install_name,-soname),$(notdir $(LIB_TARGET_SO_BARE)).$(ABI_VERSION)
