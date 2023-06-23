@@ -191,14 +191,12 @@ all: $(if $(strip $(LIB_SOURCES)),$(LIB_TARGET_SO_ALL)) $(if $(strip $(BIN_SOURC
 .DEFAULT_GOAL := all
 
 ifneq ($(COND_DARWIN),)
-  $(LIB_TARGET_SO_FULL): LDFLAGS += -dynamiclib -fPIC
+  $(LIB_TARGET_SO_FULL): LDFLAGS += -dynamiclib
 else
-  # use --default-symver if we've got it. *BSDs do not
-  LD_DEFAULT_SYMVER := $(shell ld --default-symver --version 1>/dev/null 2>/dev/null && echo -Wl,--default-symver)
-  $(LIB_TARGET_SO_FULL): LDFLAGS += -shared $(LD_DEFAULT_SYMVER) -fPIC -Wl,-soname,$(notdir $(LIB_TARGET_SO_BARE)).$(ABI_VERSION)
+  $(LIB_TARGET_SO_FULL): LDFLAGS += -Wl,--default-symver
 endif
 
-
+$(LIB_TARGET_SO_FULL): LDFLAGS += -shared -fPIC -Wl,$(if $(COND_DARWIN),-install_name,-soname),$(notdir $(LIB_TARGET_SO_BARE)).$(ABI_VERSION)
 
 $(LIB_TARGET_SO_BARE) $(LIB_TARGET_SO_ABI): $(LIB_TARGET_SO_FULL)
 	ln -fs $(notdir $(LIB_TARGET_SO_FULL)) $@
