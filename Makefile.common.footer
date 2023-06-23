@@ -272,7 +272,7 @@ endif
 
 
 # I process the simple wildcard exceptions on DIST_BIN and DIST_INCLUDE in a
-# deferred fashion. The reason is that I wand $(wildcard) to run at install
+# deferred fashion. The reason is that I need $(wildcard) to run at install
 # time, i.e. after stuff is built, and the files $(wildcard) is looking at
 # already exist
 DIST_BIN_ORIG     := $(DIST_BIN)
