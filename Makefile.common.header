@@ -30,6 +30,31 @@ SO          := $(if $(COND_DARWIN),dylib,so)
 
 
 
+# Hacks to get spaces and newlines in places where Make would normally parse
+# them out
+SPACE :=
+SPACE := $(SPACE) $(SPACE)
+define NEWLINE
+
+
+endef
+
+dirs_to_dotdot = $(subst $(SPACE),/,$(patsubst %,..,$(subst /, ,$1)))
+get_parentdir_relative_to_childdir = /$(call dirs_to_dotdot,$(patsubst $1%,%,$2))
+
+RPATH_SUFFIX = $(call get_parentdir_relative_to_childdir,$(abspath .),$(dir $(abspath $1)))
+ifeq ($(COND_DARWIN),)
+  RPATH = '$$ORIGIN'$(RPATH_SUFFIX)
+else
+  RPATH = @executable_path$(RPATH_SUFFIX)
+endif
+
+RPATH_OPTION = -Wl,-rpath,$(call RPATH,$@)
+
+
+
+
+
 # This stuff defines variables (PY_EXT_SUFFIX) that could be used by the user
 # Makefile at parsing time. So this must be included BEFORE the rest of the user
 # Makefile
@@ -133,27 +158,6 @@ $(foreach setvarcmd,$(_PYVARS),$(eval $(subst __whitespace__, ,$(setvarcmd))))
 # pull out flags from CC, throw out the compiler itself, since I know better
 _FLAGS_FROM_PYCC    = $(wordlist 2,$(words $(_PY_CC)),$(_PY_CC))
 _PY_MRBUILD_CFLAGS  = $(filter-out -O%,$(_FLAGS_FROM_PYCC) $(_PY_CFLAGS) $(_PY_CCSHARED) -I$(_PY_INCLUDEPY))
-
-# Hacks to get spaces and newlines in places where Make would normally parse
-# them out
-SPACE :=
-SPACE := $(SPACE) $(SPACE)
-define NEWLINE
-
-
-endef
-
-dirs_to_dotdot = $(subst $(SPACE),/,$(patsubst %,..,$(subst /, ,$1)))
-get_parentdir_relative_to_childdir = /$(call dirs_to_dotdot,$(patsubst $1%,%,$2))
-
-RPATH_SUFFIX = $(call get_parentdir_relative_to_childdir,$(abspath .),$(dir $(abspath $1)))
-ifeq ($(COND_DARWIN),)
-  RPATH = '$$ORIGIN'$(RPATH_SUFFIX)
-else
-  RPATH = @executable_path$(RPATH_SUFFIX)
-endif
-
-RPATH_OPTION = -Wl,-rpath,$(call RPATH,$@)
 
 _PY_MRBUILD_LDFLAGS = $(RPATH_OPTION) $(_PY_LDFLAGS) -L$(abspath .)
 
