@@ -102,7 +102,7 @@ BIN_TARGETS := $(basename $(BIN_SOURCES))
 # static libraries, so this is 100% correct
 $(LIB_OBJECTS): CCXXFLAGS += -fPIC
 
-CCXXFLAGS += -DVERSION='"$(VERSION)"'
+CCXXFLAGS += -DMRBUILD_VERSION='"$(VERSION)"'
 
 
 

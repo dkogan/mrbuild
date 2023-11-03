@@ -130,10 +130,8 @@ which can be used in the per-project =Makefile=
 
 - =VERSION=
 
-Required for non-libraries, optional for libraries. This is a version string
-that is always passed as a =#define= to the compiler, to all documentation
-generators (gengetopt and such) and so on. The project =Makefile= can set this to
-whatever they like. If omitted, it defaults to
+Required for non-libraries, optional for libraries. The version string. The
+project =Makefile= can set this to whatever. If omitted, it defaults to
 
 #+BEGIN_EXAMPLE
 VERSION ?= $(ABI_VERSION).$(TAIL_VERSION)
@@ -142,6 +140,10 @@ VERSION ?= $(ABI_VERSION).$(TAIL_VERSION)
 If =VERSION= and =ABI_VERSION= and =TAIL_VERSION= are all defined, the library
 SONAME comes from the ABI and TAIL versions, but the documentation will have the
 VERSION string.
+
+The compiler gets a preprocessor =#define= that can be used in the sources; this
+is called =MRBUILD_VERSION=. It isn't just =VERSION= to avoid conflicts with
+other symbols the code may be using.
 
 *** Build variables that MAY be defined
 
