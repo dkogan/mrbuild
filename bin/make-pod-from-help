@@ -77,7 +77,7 @@ $synopsis =~ s/\n*$//g; # cull trailing whitespace
 
 # Now a description: everything until 'xxxx arguments'. I might not have a
 # description at all. I might also not have any "arguments" sections.
-my ($description, $post) = $helpstring =~ /(^.*?)(?:\n\n)?(\w+ arguments:?\n)/ips;
+my ($description, $post) = $helpstring =~ /(^.*?)(?:\n\n)?((?:\w+ arguments|options):?\n)/ips;
 if( defined $description)
 {
     $helpstring = $post . ${^POSTMATCH};
