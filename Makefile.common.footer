@@ -110,9 +110,14 @@ CCXXFLAGS += -DMRBUILD_VERSION='"$(VERSION)"'
 # These are here to process the options separately for each file being built.
 # This allows per-target options to be set
 #
-# if no explicit optimization flags are given, optimize
+# if DEB_BUILD_OPTIONS has "noopt" (we're building a debian package, and the
+# user requested no optimizations), I remove all -O and add -O0
+#
+# otherwise, if no explicit optimization flags are given, I pass -O3
 define massageopts
-$1 $(if $(filter -O%,$1),,-O3)
+$(if $(filter noopt,$(DEB_BUILD_OPTIONS)),$(filter-out -O%,$1) -O0,\
+$1 $(if $(filter -O%,$1),,-O3))
+
 endef
 
 # If no C++ standard requested, I default to c++0x
