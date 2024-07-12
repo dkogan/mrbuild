@@ -156,7 +156,7 @@ _PYVARS = $(shell python$(PYTHON_VERSION_FOR_EXTENSIONS) -c '$(_PYVARS_SCRIPT)')
 # I then $(eval) these tokens one at a time, restoring the whitespace
 $(foreach setvarcmd,$(_PYVARS),$(eval $(subst __whitespace__, ,$(setvarcmd))))
 # Add the numpy include path. See https://bugs.debian.org/1067398
-_PY_INCLUDEPY += $(shell pkg-config --cflags-only-I numpy 2>/dev/null)
+_PY_INCLUDEPY += $(shell $(or $(PKG_CONFIG),pkg-config) --cflags-only-I numpy 2>/dev/null)
 # pull out flags from CC, throw out the compiler itself, since I know better
 _FLAGS_FROM_PYCC    = $(wordlist 2,$(words $(_PY_CC)),$(_PY_CC))
 _PY_MRBUILD_CFLAGS  = $(filter-out -O%,$(_FLAGS_FROM_PYCC) $(_PY_CFLAGS) $(_PY_CCSHARED) -I$(_PY_INCLUDEPY))
