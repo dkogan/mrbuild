@@ -161,6 +161,16 @@ _PY_INCLUDEPY += $(shell $(or $(PKG_CONFIG),pkg-config) --cflags-only-I numpy 2>
 _FLAGS_FROM_PYCC    = $(wordlist 2,$(words $(_PY_CC)),$(_PY_CC))
 _PY_MRBUILD_CFLAGS  = $(filter-out -O%,$(_FLAGS_FROM_PYCC) $(_PY_CFLAGS) $(_PY_CCSHARED) -I$(_PY_INCLUDEPY))
 
+# In the python api I have to cast a PyCFunctionWithKeywords to a PyCFunction,
+# and the compiler complains. But that's how Python does it! So I tell the
+# compiler to chill
+_PY_MRBUILD_CFLAGS += -Wno-cast-function-type
+# similarly, with gcc-14 I get this without turning off this warning:
+#   /usr/include/python3.12/object.h:142:9: error: initialization of 'long int' from 'void *' makes integer from pointer without a cast [-Wint-conversion]
+_PY_MRBUILD_CFLAGS += -Wno-int-conversion
+
+
+
 _PY_MRBUILD_LDFLAGS = $(RPATH_OPTION) $(_PY_LDFLAGS) -L$(abspath .)
 
 _PY_MRBUILD_LINKER  = $(_PY_BLDSHARED) $(_PY_BLDLIBRARY)
