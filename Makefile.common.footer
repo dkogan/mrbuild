@@ -387,9 +387,5 @@ endif
 .PHONY: install
 
 
-
-# I want to keep all the intermediate files always
-.SECONDARY:
-
 # the header dependencies
 -include $(addsuffix *.d,$(SOURCE_DIRS))
