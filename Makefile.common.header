@@ -169,11 +169,14 @@ _PY_MRBUILD_CFLAGS += -Wno-cast-function-type
 #   /usr/include/python3.12/object.h:142:9: error: initialization of 'long int' from 'void *' makes integer from pointer without a cast [-Wint-conversion]
 _PY_MRBUILD_CFLAGS += -Wno-int-conversion
 
-
-
+# This is how we link the extension module DSOs. Note that we do NOT link with
+# -lpython, or anything of the sort (from $(_PY_BLDLIBRARY)). This isn't
+# strictly necessary because this will only be linked from the python
+# executable, so the library will already be loaded. And in some situations
+# (static linking), passing $(_PY_BLDLIBRARY) by itself doesn't actually work:
+#   https://github.com/dkogan/mrcal/issues/22
 _PY_MRBUILD_LDFLAGS = $(RPATH_OPTION) $(_PY_LDFLAGS) -L$(abspath .)
-
-_PY_MRBUILD_LINKER  = $(_PY_BLDSHARED) $(_PY_BLDLIBRARY)
+_PY_MRBUILD_LINKER  = $(_PY_BLDSHARED)
 endef
 
 # List of variables a user Makefile could touch. These are all PY_...
