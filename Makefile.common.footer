@@ -387,5 +387,88 @@ endif
 .PHONY: install
 
 
+
+# I don't want any intermediate files. There's a good summary of this situation
+# by Masahiro Yamada here:
+#
+#   https://lore.kernel.org/lkml/Y6WUlth8KrR6EcsI@bergen.fjasle.eu/T/
+#
+# And this snippet of code is from his patch (except I exclude versions 4.4...
+# to support the "remake" tool).
+#
+# I don't want any intermediate files because:
+# - they are deleted after each build
+# - a missing intermediate file will NOT trigger a rebuild of targets that
+#   depend on it
+#
+# A demo. Create this Makefile:
+#
+#   # Marking all files intermediate using ".SECONDARY:" breaks this: a missing "b"
+#   # doesn't trigger a rebuild of "a"
+#   a: b
+#   	touch $@
+#   b:
+#   	touch $@
+#
+#   # A common chain of build steps. Without .SECONDARY some of these will be
+#   # deleted after the initial build, and will be re-created in a subsequent build
+#   %-GENERATED.c: %-generate
+#   	touch $@
+#   %.o: %.c
+#   	touch $@
+#   %.so: %-GENERATED.o
+#   	touch $@
+#   xxx-GENERATED.o: CFLAGS += adsf
+#
+#   # Imitates .d files created with "gcc -MMD". Does not exist on the initial build
+#   # (so the xxx-GENERATED.[co] files ARE seen as intermediate initially). But DOES
+#   # exist on subsequence builds, so these files are NOT seen as intermediate
+#   ifneq ($(wildcard xxx.so),)
+#   xxx-GENERATED.o: xxx-GENERATED.c
+#   endif
+#
+#   clean:
+#   	rm -rf a b xxx-GENERATED.c xxx-GENERATED.o xxx.so
+#   .PHONY: clean
+#
+# Then run
+#
+#   make clean
+#   touch a xxx-generate xxx.h
+#   echo "\n*** Should build xxx stuff AND a,b; should NOT rm xxx-GENERATED.c"
+#   make a xxx.so
+#   echo "\n*** All built should do nothing"
+#   make a xxx.so
+#
+# This
+# - creates the xxx... files that would exist in a source tree
+# - sets us with with "a" but not "b", so we SHOULD rebuild "a"
+#
+# So we should see the initial build create everything, and not delete anything;
+# and the subsequent build shoulnd't have to do anything. And we can see that it
+# doesn't do the right thing with or without .SECONDARY:
+#
+# The solution is to not have any intermediate files. We can mark everything as
+# not-intermediate with .NOTINTERMEDIATE:, but that's only available in make
+# 4.4, and apparently was buggy in the initial release. We can also explicitly
+# mention specific files as targets or prerequisites (for instance "___dummy___:
+# file1 file 2") but that can only be done by the specific Makefiles using
+# mrbuild, not mrbuild itself. So if we cannot have .NOTINTERMEDIATE: here, we
+# settle for .SECONDARY: this won't delete stuff after each build, but still has
+# the second problem: missing files will NOT trigger a rebuild.
+#
+# Masahiro Yamada's snippet:
+#
+# .NOTINTERMEDIATE is more correct, but only available on newer Make versions.
+# Make 4.4 introduced .NOTINTERMEDIATE, and it appears in .FEATURES, but the
+# global .NOTINTERMEDIATE does not work. We can use it on Make > 4.4.
+# Use .SECONDARY for older Make versions, but "newer-prereq" cannot detect
+# deleted files.
+ifneq ($(and $(filter notintermediate, $(.FEATURES)),$(filter-out 4.4%,$(MAKE_VERSION))),)
+.NOTINTERMEDIATE:
+else
+.SECONDARY:
+endif
+
 # the header dependencies
 -include $(addsuffix *.d,$(SOURCE_DIRS))
