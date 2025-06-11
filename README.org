@@ -11,7 +11,7 @@ ABI_VERSION  := 0
 TAIL_VERSION := 1
 
 # Build all .c sources into a library: libfoo. If all library sources are in
-# src/, you can put $(wildcard src/*.c() here. Raw wildcards are not allowed in
+# src/, you can put $(wildcard src/*.c) here. Raw wildcards are not allowed in
 # LIB_SOURCES
 LIB_SOURCES := $(wildcard *.c)
 
