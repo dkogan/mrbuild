@@ -28,7 +28,18 @@
 COND_DARWIN := $(filter Darwin,$(shell uname -s))
 SO          := $(if $(COND_DARWIN),dylib,so)
 
-
+### For cross-building on Debian. If these tools aren't already defined, I
+### define them.
+# Memoize DEB_HOST_GNU_TYPE; will be evaluated only if needed, at most once
+DEB_HOST_GNU_TYPE  = $(if $(_DEB_HOST_GNU_TYPE),,$(eval _DEB_HOST_GNU_TYPE:=$(shell dpkg-architecture -qDEB_HOST_GNU_TYPE 2>/dev/null)))$(_DEB_HOST_GNU_TYPE)
+DEB_HOST_MULTIARCH = $(if $(_DEB_HOST_MULTIARCH),,$(eval _DEB_HOST_MULTIARCH:=$(shell dpkg-architecture -qDEB_HOST_MULTIARCH 2>/dev/null)))$(_DEB_HOST_MULTIARCH)
+TOOL_ARCH_PREFIX = $(if $(DEB_HOST_GNU_TYPE),$(DEB_HOST_GNU_TYPE)-)
+PKG_CONFIG     ?= $(TOOL_ARCH_PREFIX)pkg-config
+NM             ?= $(TOOL_ARCH_PREFIX)nm
+OBJCOPY        ?= $(TOOL_ARCH_PREFIX)objcopy
+OBJDUMP        ?= $(TOOL_ARCH_PREFIX)objdump
+CC             ?= $(TOOL_ARCH_PREFIX)gcc
+CXX            ?= $(TOOL_ARCH_PREFIX)g++
 
 # Hacks to get spaces and newlines in places where Make would normally parse
 # them out
@@ -156,7 +167,7 @@ _PYVARS = $(shell python$(PYTHON_VERSION_FOR_EXTENSIONS) -c '$(_PYVARS_SCRIPT)')
 # I then $(eval) these tokens one at a time, restoring the whitespace
 $(foreach setvarcmd,$(_PYVARS),$(eval $(subst __whitespace__, ,$(setvarcmd))))
 # Add the numpy include path. See https://bugs.debian.org/1067398
-_PY_INCLUDEPY += $(shell $(or $(PKG_CONFIG),pkg-config) --cflags-only-I numpy 2>/dev/null)
+_PY_INCLUDEPY += $(shell $(PKG_CONFIG) --cflags-only-I numpy 2>/dev/null)
 # pull out flags from CC, throw out the compiler itself, since I know better
 _FLAGS_FROM_PYCC    = $(wordlist 2,$(words $(_PY_CC)),$(_PY_CC))
 _PY_MRBUILD_CFLAGS  = $(filter-out -O%,$(_FLAGS_FROM_PYCC) $(_PY_CFLAGS) $(_PY_CCSHARED) -I$(_PY_INCLUDEPY))
