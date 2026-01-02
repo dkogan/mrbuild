@@ -162,6 +162,9 @@ $(_PYVARS_GET_CONFIG)
 for v in ($(foreach v,$(_PYVARS_LIST),"$v",)):
     if v in conf:
         print(re.sub("[\t ]+", "__whitespace__", "_PY_{}:={}".format(v, conf[v])))
+
+import numpy
+print(re.sub("[\t ]+", "__whitespace__", "_PY_INCLUDENUMPY:={}".format(numpy.get_include())))
 endef
 
 # I eval this to actually invoke the Python and to ingest its results. I only
@@ -174,7 +177,7 @@ $(foreach setvarcmd,$(_PYVARS),$(eval $(subst __whitespace__, ,$(setvarcmd))))
 _PY_INCLUDEPY += $(shell $(PKG_CONFIG) --cflags-only-I numpy 2>/dev/null)
 # pull out flags from CC, throw out the compiler itself, since I know better
 _FLAGS_FROM_PYCC    = $(wordlist 2,$(words $(_PY_CC)),$(_PY_CC))
-_PY_MRBUILD_CFLAGS  = $(filter-out -O%,$(_FLAGS_FROM_PYCC) $(_PY_CFLAGS) $(_PY_CCSHARED) -I$(_PY_INCLUDEPY))
+_PY_MRBUILD_CFLAGS  = $(filter-out -O%,$(_FLAGS_FROM_PYCC) $(_PY_CFLAGS) $(_PY_CCSHARED) -I$(_PY_INCLUDEPY) -I$(_PY_INCLUDENUMPY))
 
 # In the python api I have to cast a PyCFunctionWithKeywords to a PyCFunction,
 # and the compiler complains. But that's how Python does it! So I tell the
