@@ -150,6 +150,17 @@ else
 endif
 
 
+_INCLUDENUMPY_FROM_PYTHON := $(COND_DARWIN)
+
+
+ifneq ($(_INCLUDENUMPY_FROM_PYTHON),)
+define _PYVARS_INCLUDENUMPY :=
+import numpy
+print(re.sub("[\t ]+", "__whitespace__", "_PY_INCLUDEPY+={}".format(numpy.get_include())))
+endef
+endif
+
+
 # Python script to query those variables
 define _PYVARS_SCRIPT
 from __future__ import print_function
@@ -160,9 +171,7 @@ $(_PYVARS_GET_CONFIG)
 for v in ($(foreach v,$(_PYVARS_LIST),"$v",)):
     if v in conf:
         print(re.sub("[\t ]+", "__whitespace__", "_PY_{}:={}".format(v, conf[v])))
-
-import numpy
-print(re.sub("[\t ]+", "__whitespace__", "_PY_INCLUDENUMPY:={}".format(numpy.get_include())))
+$(_PYVARS_INCLUDENUMPY)
 endef
 
 
@@ -172,11 +181,13 @@ define query_python_extension_building_flags
 _PYVARS = $(shell python$(PYTHON_VERSION_FOR_EXTENSIONS) -c '$(_PYVARS_SCRIPT)')
 # I then $(eval) these tokens one at a time, restoring the whitespace
 $(foreach setvarcmd,$(_PYVARS),$(eval $(subst __whitespace__, ,$(setvarcmd))))
-# Add the numpy include path. See https://bugs.debian.org/1067398
-_PY_INCLUDEPY += $(shell $(PKG_CONFIG) --cflags-only-I numpy 2>/dev/null)
+ifeq ($(_INCLUDENUMPY_FROM_PYTHON),)
+  # Add the numpy include path. See https://bugs.debian.org/1067398
+  _PY_INCLUDEPY += $(patsubst -I%,%,$(shell $(PKG_CONFIG) --cflags-only-I numpy 2>/dev/null))
+endif
 # pull out flags from CC, throw out the compiler itself, since I know better
 _FLAGS_FROM_PYCC    = $(wordlist 2,$(words $(_PY_CC)),$(_PY_CC))
-_PY_MRBUILD_CFLAGS  = $(filter-out -O%,$(_FLAGS_FROM_PYCC) $(_PY_CFLAGS) $(_PY_CCSHARED) -I$(_PY_INCLUDEPY) -I$(_PY_INCLUDENUMPY))
+_PY_MRBUILD_CFLAGS  = $(filter-out -O%,$(_FLAGS_FROM_PYCC) $(_PY_CFLAGS) $(_PY_CCSHARED) $(addprefix -I,$(_PY_INCLUDEPY)))
 
 # In the python api I have to cast a PyCFunctionWithKeywords to a PyCFunction,
 # and the compiler complains. But that's how Python does it! So I tell the
