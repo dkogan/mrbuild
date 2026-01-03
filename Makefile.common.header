@@ -155,10 +155,8 @@ define _PYVARS_SCRIPT
 from __future__ import print_function
 import sysconfig
 import re
-
 # get "conf" dict
 $(_PYVARS_GET_CONFIG)
-
 for v in ($(foreach v,$(_PYVARS_LIST),"$v",)):
     if v in conf:
         print(re.sub("[\t ]+", "__whitespace__", "_PY_{}:={}".format(v, conf[v])))
@@ -166,6 +164,7 @@ for v in ($(foreach v,$(_PYVARS_LIST),"$v",)):
 import numpy
 print(re.sub("[\t ]+", "__whitespace__", "_PY_INCLUDENUMPY:={}".format(numpy.get_include())))
 endef
+
 
 # I eval this to actually invoke the Python and to ingest its results. I only
 # eval this ONLY when necessary.
