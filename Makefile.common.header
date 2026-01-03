@@ -154,7 +154,7 @@ _INCLUDENUMPY_FROM_PYTHON := $(COND_DARWIN)
 
 
 ifneq ($(_INCLUDENUMPY_FROM_PYTHON),)
-define _PYVARS_INCLUDENUMPY :=
+define _PYVARS_INCLUDENUMPY
 import numpy
 print(re.sub("[\t ]+", "__whitespace__", "_PY_INCLUDEPY+={}".format(numpy.get_include())))
 endef
