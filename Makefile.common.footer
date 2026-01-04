@@ -234,7 +234,7 @@ EXTRA_CLEAN += *.$(SO).dump
 
 
 clean:
-	rm -rf $(foreach d,$(SOURCE_DIRS),$(addprefix $d,*.a *.o *.$(SO) *.$(SO).* *.d moc_* ui_*.h*)) $(BIN_TARGETS) $(foreach s,.c .h,$(addsuffix $s,$(basename $(shell find . -name '*.ggo')))) $(EXTRA_CLEAN)
+	rm -rf $(foreach d,$(SOURCE_DIRS),$(addprefix $d,*.a *.o *.so *.so.* *.dylib *.dylib.* *.d moc_* ui_*.h*)) $(BIN_TARGETS) $(foreach s,.c .h,$(addsuffix $s,$(basename $(shell find . -name '*.ggo')))) $(EXTRA_CLEAN)
 distclean: clean
 
 .PHONY: distclean clean
