@@ -47,6 +47,7 @@ CXX            ?= $(TOOL_ARCH_PREFIX)g++
 
 # Hacks to get spaces and newlines in places where Make would normally parse
 # them out
+COMMA := ,
 SPACE :=
 SPACE := $(SPACE) $(SPACE)
 define NEWLINE

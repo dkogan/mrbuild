@@ -199,7 +199,7 @@ else
   $(LIB_TARGET_SO_FULL): LDFLAGS += -dynamiclib
 endif
 
-$(LIB_TARGET_SO_FULL): LDFLAGS += -shared -fPIC -Wl,$(if $(COND_DARWIN),-install_name,-soname),$(notdir $(LIB_TARGET_SO_BARE)).$(ABI_VERSION)
+$(LIB_TARGET_SO_FULL): LDFLAGS += -shared -fPIC -Wl,$(if $(COND_DARWIN),-install_name$(COMMA)@rpath/,-soname$(COMMA))$(notdir $(LIB_TARGET_SO_BARE)).$(ABI_VERSION)
 
 $(LIB_TARGET_SO_BARE) $(LIB_TARGET_SO_ABI): $(LIB_TARGET_SO_FULL)
 	ln -fs $(notdir $(LIB_TARGET_SO_FULL)) $@
