@@ -62,7 +62,7 @@ RPATH_SUFFIX = $(call get_parentdir_relative_to_childdir,$(abspath .),$(dir $(ab
 ifeq ($(COND_DARWIN),)
   RPATH = '$$ORIGIN'$(RPATH_SUFFIX)
 else
-  RPATH = @executable_path$(RPATH_SUFFIX)
+  RPATH = @loader_path$(RPATH_SUFFIX)
 endif
 
 RPATH_OPTION = -Wl,-rpath,$(call RPATH,$@)
