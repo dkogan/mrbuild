@@ -127,6 +127,10 @@ define massageopts_c
 $(call massageopts,$1)
 endef
 
+define massageopts_f
+$(call massageopts,$1)
+endef
+
 
 
 # define the compile rules. I need to redefine the rules here because my
@@ -137,6 +141,7 @@ endef
 # override these
 cc_build_rule = $(strip $(CXX)  $(call massageopts_cxx,-Wall -Wextra $(CXXFLAGS) $(CCXXFLAGS) $(CPPFLAGS))) -c -o $@ $<
 c_build_rule  = $(strip $(CC)   $(call massageopts_c,  -Wall -Wextra $(CFLAGS)   $(CCXXFLAGS) $(CPPFLAGS))) -c -o $@ $<
+f_build_rule  = $(strip $(FC)   $(call massageopts_f,  -Wall -Wextra $(FFLAGS)                $(CPPFLAGS))) -c -o $@ $<
 cu_build_rule = $(strip $(NVCC) $(call massageopts_c,  -Wall -Wextra $(CUFLAGS)               $(CPPFLAGS))) -c -o $@ $<
 cu_build_rule += --compiler-options "-Wall -Wextra $(CCXXFLAGS)"
 
@@ -149,6 +154,10 @@ cu_build_rule += --compiler-options "-Wall -Wextra $(CCXXFLAGS)"
 	$(cc_build_rule)
 %.o:%.c
 	$(c_build_rule)
+%.o:%.f90
+	$(f_build_rule)
+%.o:%.f
+	$(f_build_rule)
 %.o:%.cu
 	$(cu_build_rule)
 %.o: %.S
