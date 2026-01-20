@@ -296,6 +296,17 @@ DIST_INCLUDE = $(filter-out $(wildcard $(DIST_INCLUDE_EXCEPT) *.docstring.h), \
 
 MANDIR := usr/share/man
 
+
+INSTALL_ROOT_BIN          ?= /usr/bin
+INSTALL_ROOT_INCLUDE      ?= /usr/include/$(PROJECT_NAME)
+INSTALL_ROOT_DOC          ?= /usr/share/doc/$(PROJECT_NAME)
+INSTALL_ROOT_MAN          ?= /$(MANDIR)
+INSTALL_ROOT_DATA         ?= /usr/share/$(PROJECT_NAME)
+INSTALL_ROOT_PERL_MODULES ?= /usr/share/perl5
+INSTALL_ROOT_PY2_MODULES  ?= /$(PY2_MODULE_PATH)
+INSTALL_ROOT_PY3_MODULES  ?= /$(PY3_MODULE_PATH)
+
+
 # Generates the install rules. Arguments:
 #   1. variable containing the being installed
 #   2. target path they're being installed to
@@ -308,10 +319,10 @@ endef
 
 # Redhat wants the various manpage section get their own subdir for some reason
 define move_manpages_for_redhat
-  mkdir -p $(DESTDIR)/$(MANDIR)/man$1                        && \
-  (mv $(DESTDIR)/$(MANDIR)/*.$1    $(DESTDIR)/$(MANDIR)/man$1 2>/dev/null || true) && \
-  (mv $(DESTDIR)/$(MANDIR)/*.$1.gz $(DESTDIR)/$(MANDIR)/man$1 2>/dev/null || true) && \
-  (rmdir $(DESTDIR)/$(MANDIR)/man$1                           2>/dev/null || true)
+  mkdir -p $(DESTDIR)$(INSTALL_ROOT_MAN)/man$1                        && \
+  (mv $(DESTDIR)$(INSTALL_ROOT_MAN)/*.$1    $(DESTDIR)$(INSTALL_ROOT_MAN)/man$1 2>/dev/null || true) && \
+  (mv $(DESTDIR)$(INSTALL_ROOT_MAN)/*.$1.gz $(DESTDIR)$(INSTALL_ROOT_MAN)/man$1 2>/dev/null || true) && \
+  (rmdir $(DESTDIR)$(INSTALL_ROOT_MAN)/man$1                           2>/dev/null || true)
 endef
 
 ifneq ($(strip $(LIB_SOURCES)),)
@@ -327,23 +338,23 @@ ifneq ($(strip $(LIB_SOURCES)),)
 	ln -fs $(notdir $(LIB_TARGET_SO_FULL)) $(DESTDIR)/$(USRLIB)/$(notdir $(LIB_TARGET_SO_ABI))
 	ln -fs $(notdir $(LIB_TARGET_SO_FULL)) $(DESTDIR)/$(USRLIB)/$(notdir $(LIB_TARGET_SO_BARE))
 endif
-	$(call install_rule,DIST_BIN,         $(DESTDIR)/usr/bin)
-	$(call install_rule,DIST_INCLUDE,     $(DESTDIR)/usr/include/$(PROJECT_NAME))
-	$(call install_rule,DIST_DOC,         $(DESTDIR)/usr/share/doc/$(PROJECT_NAME))
+	$(call install_rule,DIST_BIN,         $(DESTDIR)$(INSTALL_ROOT_BIN))
+	$(call install_rule,DIST_INCLUDE,     $(DESTDIR)$(INSTALL_ROOT_INCLUDE))
+	$(call install_rule,DIST_DOC,         $(DESTDIR)$(INSTALL_ROOT_DOC))
 
 # I install the manpages normally. On Redhat I need to shuffle them into
 # different subdirectories. This is incomplete: sections that aren't simply
 # digits 1-9 will not be moved. "3perl" is an example I can think of that won't
 # work here. Good-enough for now
-	$(call install_rule,DIST_MAN,         $(DESTDIR)/$(MANDIR))
+	$(call install_rule,DIST_MAN,         $(DESTDIR)$(INSTALL_ROOT_MAN))
 ifeq (,$(USE_DEBIAN_PATHS))
 	$(foreach s,1 2 3 4 5 6 7 8 9,$(call move_manpages_for_redhat,$s) && ) true
 endif
 
-	$(call install_rule,DIST_DATA,        $(DESTDIR)/usr/share/$(PROJECT_NAME))
-	$(call install_rule,DIST_PERL_MODULES,$(DESTDIR)/usr/share/perl5)
-	$(call install_rule,DIST_PY2_MODULES, $(DESTDIR)/$(PY2_MODULE_PATH))
-	$(call install_rule,DIST_PY3_MODULES, $(DESTDIR)/$(PY3_MODULE_PATH))
+	$(call install_rule,DIST_DATA,        $(DESTDIR)$(INSTALL_ROOT_DATA))
+	$(call install_rule,DIST_PERL_MODULES,$(DESTDIR)$(INSTALL_ROOT_PERL_MODULES))
+	$(call install_rule,DIST_PY2_MODULES, $(DESTDIR)$(INSTALL_ROOT_PY2_MODULES))
+	$(call install_rule,DIST_PY3_MODULES, $(DESTDIR)$(INSTALL_ROOT_PY3_MODULES))
 
         # In filenames I rename __colon__ -> :
         # This is required because Make can't deal with : in rules
@@ -373,7 +384,7 @@ else
 	echo "3. what about nested paths? test mrgingham"
   ifneq ($(strip $(DIST_PY3_MODULES)),)
         # here $f is the installed file
-	$(foreach f,$(filter %$(PY_EXT_SUFFIX),$(wildcard $(DESTDIR)/$(PY3_MODULE_PATH)/$(DIST_PY3_MODULES)/*)),install_name_tool -delete_rpath $(call RPATH,$(patsubst $(DESTDIR)/$(PY3_MODULE_PATH)/%,%,$f)) $f && \$(NEWLINE)) true
+	$(foreach f,$(filter %$(PY_EXT_SUFFIX),$(wildcard $(DESTDIR)$(INSTALL_ROOT_PY3_MODULES)/$(DIST_PY3_MODULES)/*)),install_name_tool -delete_rpath $(call RPATH,$(patsubst $(DESTDIR)$(INSTALL_ROOT_PY3_MODULES)/%,%,$f)) $f && \$(NEWLINE)) true
   endif
 
 endif

@@ -259,6 +259,28 @@ DIST_MAN_EXCEPT_FINDSPEC := -type f \! \( -name 'frobnicator.3' \)
 
 Additional targets to clean out during a =make clean=
 
+- =INSTALL_ROOT_XXX=
+
+By default (without a user-defined =INSTALL_ROOT_XXX=) mrbuild installs to
+standard locations, but there are situations where we may want to override this.
+We can do that by defining =INSTALL_ROOT_XXX= for each specific kind of product.
+The definition in mrbuild:
+
+#+begin_src makefile
+INSTALL_ROOT_BIN          ?= /usr/bin
+INSTALL_ROOT_INCLUDE      ?= /usr/include/$(PROJECT_NAME)
+INSTALL_ROOT_DOC          ?= /usr/share/doc/$(PROJECT_NAME)
+INSTALL_ROOT_MAN          ?= /$(MANDIR)
+INSTALL_ROOT_DATA         ?= /usr/share/$(PROJECT_NAME)
+INSTALL_ROOT_PERL_MODULES ?= /usr/share/perl5
+INSTALL_ROOT_PY2_MODULES  ?= /$(PY2_MODULE_PATH)
+INSTALL_ROOT_PY3_MODULES  ?= /$(PY3_MODULE_PATH)
+#+end_src
+
+Each of these may be overridden by the user, and the default value is given
+above. Most of the time, the defaults should be used, and these should be
+omitted.
+
 *** QT GUIs
 
 mrbuild has rules to handle QT moc and =.ui= stuff. An executable that uses QT
