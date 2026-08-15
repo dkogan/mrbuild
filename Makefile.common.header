@@ -125,7 +125,7 @@ _PYVARS_LIST := CC CFLAGS CCSHARED INCLUDEPY BLDSHARED BLDLIBRARY LDFLAGS EXT_SU
 ifneq ($(DEB_HOST_MULTIARCH),)
   # We have a debian multiarch. We're almost certainly cross-building with
   # Debian. Try to get the variables directly, using any-architecture python
-  define _PYVARS_GET_CONFIG :=
+  define _PYVARS_GET_CONFIG
 import ast
 import sys
 
