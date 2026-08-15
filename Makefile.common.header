@@ -151,8 +151,27 @@ else
 endif
 
 
-_INCLUDENUMPY_FROM_PYTHON := $(COND_DARWIN)
+ifneq ($(COND_DARWIN),)
+# If ARCHFLAGS is set, keep only the requested -arch tokens in all sysconfig
+# string values. This is a macos thing. Needed because some of their python
+# setups support multiple architectures at the same time, or something. Since I
+# build just one library at a time, linking to a multi-arch python breaks
+# things. Here I can use ARCHFLAGS to limit the python to just the architecture
+# I care about
+  define _HANDLE_ARCHFLAGS_FOR_DARWIN
+import os
+_archflags = os.environ.get("ARCHFLAGS")
+if _archflags:
+    _keep = set(re.findall(r"-arch\s+(\S+)", _archflags))
+    def _filter_arch(s):
+        if not isinstance(s, str): return s
+        return re.sub(r"-arch\s+(\S+)", lambda m: m.group() if m.group(1) in _keep else "", s)
+    conf = {k: _filter_arch(v) for k, v in conf.items()}
+endef
 
+endif
+
+_INCLUDENUMPY_FROM_PYTHON := $(COND_DARWIN)
 
 ifneq ($(_INCLUDENUMPY_FROM_PYTHON),)
 define _PYVARS_INCLUDENUMPY
@@ -169,6 +188,9 @@ import sysconfig
 import re
 # get "conf" dict
 $(_PYVARS_GET_CONFIG)
+
+$(_HANDLE_ARCHFLAGS_FOR_DARWIN)
+
 for v in ($(foreach v,$(_PYVARS_LIST),"$v",)):
     if v in conf:
         print(re.sub("[\t ]+", "__whitespace__", "_PY_{}:={}".format(v, conf[v])))
