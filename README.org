@@ -267,6 +267,7 @@ We can do that by defining =INSTALL_ROOT_XXX= for each specific kind of product.
 The definition in mrbuild:
 
 #+begin_src makefile
+INSTALL_ROOT_LIB          ?= /$(USRLIB)
 INSTALL_ROOT_BIN          ?= /usr/bin
 INSTALL_ROOT_INCLUDE      ?= /usr/include/$(PROJECT_NAME)
 INSTALL_ROOT_DOC          ?= /usr/share/doc/$(PROJECT_NAME)

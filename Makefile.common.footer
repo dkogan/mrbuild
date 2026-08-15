@@ -297,6 +297,7 @@ DIST_INCLUDE = $(filter-out $(wildcard $(DIST_INCLUDE_EXCEPT) *.docstring.h), \
 MANDIR := usr/share/man
 
 
+INSTALL_ROOT_LIB          ?= /$(USRLIB)
 INSTALL_ROOT_BIN          ?= /usr/bin
 INSTALL_ROOT_INCLUDE      ?= /usr/include/$(PROJECT_NAME)
 INSTALL_ROOT_DOC          ?= /usr/share/doc/$(PROJECT_NAME)
@@ -333,10 +334,10 @@ install: $(BIN_TARGETS) $(DIST_DOC) $(DIST_MAN) $(DIST_DATA)
 
 # using 'cp -P' instead of 'install' because the latter follows links unconditionally
 ifneq ($(strip $(LIB_SOURCES)),)
-	mkdir -p $(DESTDIR)/$(USRLIB)
-	cp -P $(LIB_TARGET_SO_FULL)  $(DESTDIR)/$(USRLIB)
-	ln -fs $(notdir $(LIB_TARGET_SO_FULL)) $(DESTDIR)/$(USRLIB)/$(notdir $(LIB_TARGET_SO_ABI))
-	ln -fs $(notdir $(LIB_TARGET_SO_FULL)) $(DESTDIR)/$(USRLIB)/$(notdir $(LIB_TARGET_SO_BARE))
+	mkdir -p $(DESTDIR)$(INSTALL_ROOT_LIB)
+	cp -P $(LIB_TARGET_SO_FULL)  $(DESTDIR)$(INSTALL_ROOT_LIB)
+	ln -fs $(notdir $(LIB_TARGET_SO_FULL)) $(DESTDIR)$(INSTALL_ROOT_LIB)/$(notdir $(LIB_TARGET_SO_ABI))
+	ln -fs $(notdir $(LIB_TARGET_SO_FULL)) $(DESTDIR)$(INSTALL_ROOT_LIB)/$(notdir $(LIB_TARGET_SO_BARE))
 endif
 	$(call install_rule,DIST_BIN,         $(DESTDIR)$(INSTALL_ROOT_BIN))
 	$(call install_rule,DIST_INCLUDE,     $(DESTDIR)$(INSTALL_ROOT_INCLUDE))
@@ -367,14 +368,14 @@ ifeq ($(COND_DARWIN),)
         # could be extension modules for the various languages, and I thus look
         # for those EVERYWHERE
   ifneq ($(strip $(DIST_BIN)),)
-	chrpath -d $(DESTDIR)/usr/bin/* 2>/dev/null || true
+	chrpath -d $(DESTDIR)$(INSTALL_ROOT_BIN)* 2>/dev/null || true
   endif
 	find $(DESTDIR) -name '*.$(SO)' | xargs chrpath -d
 else
         # BSD. I need to strip out the RPATHs individually
   ifneq ($(strip $(DIST_BIN)),)
         # here $f is the built file
-	$(foreach f,$(filter $(DIST_BIN),$(BIN_TARGETS)),install_name_tool -delete_rpath $(call RPATH,$f) $(DESTDIR)/usr/bin/$(notdir $f) && \$(NEWLINE)) true
+	$(foreach f,$(filter $(DIST_BIN),$(BIN_TARGETS)),install_name_tool -delete_rpath $(call RPATH,$f) $(DESTDIR)$(INSTALL_ROOT_BIN)$(notdir $f) && \$(NEWLINE)) true
   endif
 
 
@@ -392,13 +393,13 @@ endif
         # exists to let these run in-tree, but needs to be removed at
         # install-time (similar to an RPATH)
 ifneq ($(strip $(DIST_BIN)),)
-	for fil in `find $(DESTDIR)/usr/bin -type f`; do head -n1 $$fil | grep -q '^#!.*/perl$$' && perl -n -i -e 'print unless /^\s* use \s+ lib \b/x' $$fil || true; done
+	for fil in `find $(DESTDIR)$(INSTALL_ROOT_BIN) -type f`; do head -n1 $$fil | grep -q '^#!.*/perl$$' && perl -n -i -e 'print unless /^\s* use \s+ lib \b/x' $$fil || true; done
 endif
-	test -e $(DESTDIR)/usr/share/perl5 && find $(DESTDIR)/usr/share/perl5 -type f | xargs perl -n -i -e 'print unless /^\s* use \s+ lib \b/x' || true
+	test -e $(DESTDIR)$(INSTALL_ROOT_PERL_MODULES) && find $(DESTDIR)$(INSTALL_ROOT_PERL_MODULES) -type f | xargs perl -n -i -e 'print unless /^\s* use \s+ lib \b/x' || true
 
 ifneq ($(strip $(DIST_BIN)),)
         # Everything executable needs specific permission bits
-	chmod 0755 $(DESTDIR)/usr/bin/*
+	chmod 0755 $(DESTDIR)$(INSTALL_ROOT_BIN)*
 endif
 
 .PHONY: install
