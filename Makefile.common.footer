@@ -396,7 +396,7 @@ endif
 
 ifneq ($(strip $(DIST_BIN)),)
         # Everything executable needs specific permission bits
-	chmod 0755 $(DESTDIR)$(INSTALL_ROOT_BIN)*
+	chmod 0755 $(DESTDIR)$(INSTALL_ROOT_BIN)/*
 endif
 
 .PHONY: install
