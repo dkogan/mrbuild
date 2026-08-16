@@ -372,21 +372,18 @@ ifeq ($(COND_DARWIN),)
   endif
 	find $(DESTDIR) -name '*.$(SO)' | xargs chrpath -d
 else
-        # BSD. I need to strip out the RPATHs individually
-  ifneq ($(strip $(DIST_BIN)),)
-        # here $f is the built file
-	$(foreach f,$(filter $(DIST_BIN),$(BIN_TARGETS)),install_name_tool -delete_rpath $(call RPATH,$f) $(DESTDIR)$(INSTALL_ROOT_BIN)$(notdir $f) && \$(NEWLINE)) true
-  endif
-
-
-	echo "bsd install-time stripping of rpath is incomplete:"
-	echo "1. need py2 path"
-	echo "2. does $(wildcard) work here? it will be expanded before those targets exist"
-	echo "3. what about nested paths? test mrgingham"
-  ifneq ($(strip $(DIST_PY3_MODULES)),)
-        # here $f is the installed file
-	$(foreach f,$(filter %$(PY_EXT_SUFFIX),$(wildcard $(DESTDIR)$(INSTALL_ROOT_PY3_MODULES)/$(DIST_PY3_MODULES)/*)),install_name_tool -delete_rpath $(call RPATH,$(patsubst $(DESTDIR)$(INSTALL_ROOT_PY3_MODULES)/%,%,$f)) $f && \$(NEWLINE)) true
-  endif
+        # BSD. We remove all @loader_path RPATHs, since presumably I added all
+        # these. I look at .$(SO) and .so because python always uses .so. So on
+        # macos I need both
+	find $(DESTDIR) ! -type l -type f \
+	    \( -name '*.$(SO)' -o -name '*.so' \
+	       $(if $(strip $(DIST_BIN)),-o -path '$(DESTDIR)$(INSTALL_ROOT_BIN)/*') \
+	    \) | \
+	    while read f; do \
+	        otool -l "$$f" | \
+	        awk '/LC_RPATH/,/path / { if (/path / && $$2 ~ /^@loader_path/) print $$2 }' | \
+	        xargs -I @ install_name_tool -delete_rpath @ "$$f"; \
+	    done;
 
 endif
         # Any perl programs need their binary path stuff stripped out. This
