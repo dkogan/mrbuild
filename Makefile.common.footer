@@ -320,10 +320,10 @@ endef
 
 # Redhat wants the various manpage section get their own subdir for some reason
 define move_manpages_for_redhat
-  mkdir -p $(DESTDIR)$(INSTALL_ROOT_MAN)/man$1                        && \
-  (mv $(DESTDIR)$(INSTALL_ROOT_MAN)/*.$1    $(DESTDIR)$(INSTALL_ROOT_MAN)/man$1 2>/dev/null || true) && \
-  (mv $(DESTDIR)$(INSTALL_ROOT_MAN)/*.$1.gz $(DESTDIR)$(INSTALL_ROOT_MAN)/man$1 2>/dev/null || true) && \
-  (rmdir $(DESTDIR)$(INSTALL_ROOT_MAN)/man$1                           2>/dev/null || true)
+  mkdir -p $(DESTDIR)/$(INSTALL_ROOT_MAN)/man$1                        && \
+  (mv $(DESTDIR)/$(INSTALL_ROOT_MAN)/*.$1    $(DESTDIR)/$(INSTALL_ROOT_MAN)/man$1 2>/dev/null || true) && \
+  (mv $(DESTDIR)/$(INSTALL_ROOT_MAN)/*.$1.gz $(DESTDIR)/$(INSTALL_ROOT_MAN)/man$1 2>/dev/null || true) && \
+  (rmdir $(DESTDIR)/$(INSTALL_ROOT_MAN)/man$1                           2>/dev/null || true)
 endef
 
 ifneq ($(strip $(LIB_SOURCES)),)
@@ -334,28 +334,28 @@ install: $(BIN_TARGETS) $(DIST_DOC) $(DIST_MAN) $(DIST_DATA)
 
 # using 'cp -P' instead of 'install' because the latter follows links unconditionally
 ifneq ($(strip $(LIB_SOURCES)),)
-	mkdir -p $(DESTDIR)$(INSTALL_ROOT_LIB)
-	cp -P $(LIB_TARGET_SO_FULL)  $(DESTDIR)$(INSTALL_ROOT_LIB)
-	ln -fs $(notdir $(LIB_TARGET_SO_FULL)) $(DESTDIR)$(INSTALL_ROOT_LIB)/$(notdir $(LIB_TARGET_SO_ABI))
-	ln -fs $(notdir $(LIB_TARGET_SO_FULL)) $(DESTDIR)$(INSTALL_ROOT_LIB)/$(notdir $(LIB_TARGET_SO_BARE))
+	mkdir -p $(DESTDIR)/$(INSTALL_ROOT_LIB)
+	cp -P $(LIB_TARGET_SO_FULL)  $(DESTDIR)/$(INSTALL_ROOT_LIB)
+	ln -fs $(notdir $(LIB_TARGET_SO_FULL)) $(DESTDIR)/$(INSTALL_ROOT_LIB)/$(notdir $(LIB_TARGET_SO_ABI))
+	ln -fs $(notdir $(LIB_TARGET_SO_FULL)) $(DESTDIR)/$(INSTALL_ROOT_LIB)/$(notdir $(LIB_TARGET_SO_BARE))
 endif
-	$(call install_rule,DIST_BIN,         $(DESTDIR)$(INSTALL_ROOT_BIN))
-	$(call install_rule,DIST_INCLUDE,     $(DESTDIR)$(INSTALL_ROOT_INCLUDE))
-	$(call install_rule,DIST_DOC,         $(DESTDIR)$(INSTALL_ROOT_DOC))
+	$(call install_rule,DIST_BIN,         $(DESTDIR)/$(INSTALL_ROOT_BIN))
+	$(call install_rule,DIST_INCLUDE,     $(DESTDIR)/$(INSTALL_ROOT_INCLUDE))
+	$(call install_rule,DIST_DOC,         $(DESTDIR)/$(INSTALL_ROOT_DOC))
 
 # I install the manpages normally. On Redhat I need to shuffle them into
 # different subdirectories. This is incomplete: sections that aren't simply
 # digits 1-9 will not be moved. "3perl" is an example I can think of that won't
 # work here. Good-enough for now
-	$(call install_rule,DIST_MAN,         $(DESTDIR)$(INSTALL_ROOT_MAN))
+	$(call install_rule,DIST_MAN,         $(DESTDIR)/$(INSTALL_ROOT_MAN))
 ifeq (,$(USE_DEBIAN_PATHS))
 	$(foreach s,1 2 3 4 5 6 7 8 9,$(call move_manpages_for_redhat,$s) && ) true
 endif
 
-	$(call install_rule,DIST_DATA,        $(DESTDIR)$(INSTALL_ROOT_DATA))
-	$(call install_rule,DIST_PERL_MODULES,$(DESTDIR)$(INSTALL_ROOT_PERL_MODULES))
-	$(call install_rule,DIST_PY2_MODULES, $(DESTDIR)$(INSTALL_ROOT_PY2_MODULES))
-	$(call install_rule,DIST_PY3_MODULES, $(DESTDIR)$(INSTALL_ROOT_PY3_MODULES))
+	$(call install_rule,DIST_DATA,        $(DESTDIR)/$(INSTALL_ROOT_DATA))
+	$(call install_rule,DIST_PERL_MODULES,$(DESTDIR)/$(INSTALL_ROOT_PERL_MODULES))
+	$(call install_rule,DIST_PY2_MODULES, $(DESTDIR)/$(INSTALL_ROOT_PY2_MODULES))
+	$(call install_rule,DIST_PY3_MODULES, $(DESTDIR)/$(INSTALL_ROOT_PY3_MODULES))
 
         # In filenames I rename __colon__ -> :
         # This is required because Make can't deal with : in rules
@@ -368,7 +368,7 @@ ifeq ($(COND_DARWIN),)
         # could be extension modules for the various languages, and I thus look
         # for those EVERYWHERE
   ifneq ($(strip $(DIST_BIN)),)
-	chrpath -d $(DESTDIR)$(INSTALL_ROOT_BIN)* 2>/dev/null || true
+	chrpath -d $(DESTDIR)/$(INSTALL_ROOT_BIN)* 2>/dev/null || true
   endif
 	find $(DESTDIR) -name '*.$(SO)' | xargs chrpath -d
 else
@@ -377,7 +377,7 @@ else
         # macos I need both
 	find $(DESTDIR) ! -type l -type f \
 	    \( -name '*.$(SO)' -o -name '*.so' \
-	       $(if $(strip $(DIST_BIN)),-o -path '$(DESTDIR)$(INSTALL_ROOT_BIN)/*') \
+	       $(if $(strip $(DIST_BIN)),-o -path '$(DESTDIR)/$(INSTALL_ROOT_BIN)/*') \
 	    \) | \
 	    while read f; do \
 	        otool -l "$$f" | \
@@ -390,13 +390,13 @@ endif
         # exists to let these run in-tree, but needs to be removed at
         # install-time (similar to an RPATH)
 ifneq ($(strip $(DIST_BIN)),)
-	for fil in `find $(DESTDIR)$(INSTALL_ROOT_BIN) -type f`; do head -n1 $$fil | grep -q '^#!.*/perl$$' && perl -n -i -e 'print unless /^\s* use \s+ lib \b/x' $$fil || true; done
+	for fil in `find $(DESTDIR)/$(INSTALL_ROOT_BIN) -type f`; do head -n1 $$fil | grep -q '^#!.*/perl$$' && perl -n -i -e 'print unless /^\s* use \s+ lib \b/x' $$fil || true; done
 endif
-	test -e $(DESTDIR)$(INSTALL_ROOT_PERL_MODULES) && find $(DESTDIR)$(INSTALL_ROOT_PERL_MODULES) -type f | xargs perl -n -i -e 'print unless /^\s* use \s+ lib \b/x' || true
+	test -e $(DESTDIR)/$(INSTALL_ROOT_PERL_MODULES) && find $(DESTDIR)/$(INSTALL_ROOT_PERL_MODULES) -type f | xargs perl -n -i -e 'print unless /^\s* use \s+ lib \b/x' || true
 
 ifneq ($(strip $(DIST_BIN)),)
         # Everything executable needs specific permission bits
-	chmod 0755 $(DESTDIR)$(INSTALL_ROOT_BIN)/*
+	chmod 0755 $(DESTDIR)/$(INSTALL_ROOT_BIN)/*
 endif
 
 .PHONY: install
