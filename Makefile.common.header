@@ -282,6 +282,8 @@ _VERSION_STRIP_POST_TAG_ANNOTATIONS := s/-\d+-g[0-9a-f-]+$$//
 _VERSION_STRIP_LEADING_PATH         := s/^.*\///
 # I might have a tag such as "v2.0". This converts it to "2.0"
 _VERSION_STRIP_LEADING_V            := s/^v//g
+# I might have a tag such as "v2.0.post3". This converts it to "v2.0"
+_VERSION_STRIP_TRAILING_POST        := s/\.post\d+$$//g
 
 # Custom version from git (or from debian/changelog if no git repo available)
 
@@ -296,7 +298,8 @@ _VERSION = $(shell															\
       git describe --tags |														\
       perl -pe '$(if $(VERSION_USE_LATEST_TAG),$(_VERSION_STRIP_POST_TAG_ANNOTATIONS));							\
 		$(_VERSION_STRIP_LEADING_PATH);												\
-		$(_VERSION_STRIP_LEADING_V);';												\
+		$(_VERSION_STRIP_LEADING_V); ; 												\
+		$(_VERSION_STRIP_TRAILING_POST);';											\
   else																	\
     echo "VERSION_UNKNOWN";														\
   fi																	\
