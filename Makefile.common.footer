@@ -328,6 +328,34 @@ define move_manpages_for_redhat
   (rmdir $(DESTDIR)/$(INSTALL_ROOT_MAN)/man$1                           2>/dev/null || true)
 endef
 
+
+ifeq ($(COND_DARWIN),)
+  # Remove rpaths from everything. It is allowed to fail because some /usr/bin
+  # executables may not be ELF files
+  _STRIP_RPATH_FILES := xargs chrpath -d -k 2>/dev/null || true
+else
+  # Mac. We remove all @loader_path RPATHs, since presumably I added all these.
+  define _STRIP_RPATH_FILES :=
+    while read f; do \
+	otool -l "$$f" | \
+	awk '/LC_RPATH/,/path / { if (/path / && $$2 ~ /^@loader_path/) print $$2 }' | \
+	xargs -I @ install_name_tool -delete_rpath @ "$$f"; \
+    done;
+  endef
+endif
+
+define MRBUILD_STRIP_RPATH
+  # I look at .$(SO) and .so because python always uses .so, even though on
+  # macos it's normally .dylib (i.e. .$(SO))
+  find $(DESTDIR) ! -type l -type f \
+      \( -name '*.$(SO)' -o -name '*.$(SO).*' -o -name '*.so' -o -name '*.so.*' \
+	 $(if $(strip $(DIST_BIN)),-o -path '$(patsubst $(abspath .)/%,%,$(abspath $(DESTDIR)/$(INSTALL_ROOT_BIN)))/*') \
+      \) | $(_STRIP_RPATH_FILES)
+endef
+
+
+
+
 ifneq ($(strip $(LIB_SOURCES)),)
 install: $(LIB_TARGET_SO_ALL)
 endif
@@ -363,31 +391,8 @@ endif
         # This is required because Make can't deal with : in rules
 	for fil in `find $(DESTDIR) -name '*__colon__*'`; do mv $$fil `echo $$fil | sed s/__colon__/:/g`; done
 
-ifeq ($(COND_DARWIN),)
-        # Remove rpaths from everything. /usr/bin is allowed to fail because
-        # some of those executables aren't ELFs. On the other hand, any .so we
-        # find IS en ELF. Those could live in a number of places, since they
-        # could be extension modules for the various languages, and I thus look
-        # for those EVERYWHERE
-  ifneq ($(strip $(DIST_BIN)),)
-	chrpath -d $(DESTDIR)/$(INSTALL_ROOT_BIN)* 2>/dev/null || true
-  endif
-	find $(DESTDIR) -name '*.$(SO)' | xargs chrpath -d
-else
-        # BSD. We remove all @loader_path RPATHs, since presumably I added all
-        # these. I look at .$(SO) and .so because python always uses .so. So on
-        # macos I need both
-	find $(DESTDIR) ! -type l -type f \
-	    \( -name '*.$(SO)' -o -name '*.so' \
-	       $(if $(strip $(DIST_BIN)),-o -path '$(DESTDIR)/$(INSTALL_ROOT_BIN)/*') \
-	    \) | \
-	    while read f; do \
-	        otool -l "$$f" | \
-	        awk '/LC_RPATH/,/path / { if (/path / && $$2 ~ /^@loader_path/) print $$2 }' | \
-	        xargs -I @ install_name_tool -delete_rpath @ "$$f"; \
-	    done;
+	$(MRBUILD_STRIP_RPATH)
 
-endif
         # Any perl programs need their binary path stuff stripped out. This
         # exists to let these run in-tree, but needs to be removed at
         # install-time (similar to an RPATH)
