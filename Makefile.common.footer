@@ -209,7 +209,7 @@ else
   _SONAME_OPTION := -dynamiclib -Wl,-install_name$(COMMA)@rpath/$(_SONAME)
 endif
 
-$(LIB_TARGET_SO_FULL): LDFLAGS += -shared -fPIC $(_SONAME_OPTION)
+$(LIB_TARGET_SO_FULL): LDFLAGS += -shared -fPIC $(RPATH_OPTION) $(_SONAME_OPTION)
 
 
 $(LIB_TARGET_SO_BARE) $(LIB_TARGET_SO_ABI): $(LIB_TARGET_SO_FULL)
