@@ -202,13 +202,15 @@ all: $(if $(strip $(LIB_SOURCES)),$(LIB_TARGET_SO_ALL)) $(if $(strip $(BIN_SOURC
 .PHONY: all
 .DEFAULT_GOAL := all
 
+_SONAME := $(notdir $(LIB_TARGET_SO_BARE)).$(ABI_VERSION)
 ifeq ($(COND_DARWIN),)
-  $(LIB_TARGET_SO_FULL): LDFLAGS += -Wl,--default-symver
+  _SONAME_OPTION := -Wl,--default-symver -Wl,-soname$(COMMA)$(_SONAME)
 else
-  $(LIB_TARGET_SO_FULL): LDFLAGS += -dynamiclib
+  _SONAME_OPTION := -dynamiclib -Wl,-install_name$(COMMA)@rpath/$(_SONAME)
 endif
 
-$(LIB_TARGET_SO_FULL): LDFLAGS += -shared -fPIC -Wl,$(if $(COND_DARWIN),-install_name$(COMMA)@rpath/,-soname$(COMMA))$(notdir $(LIB_TARGET_SO_BARE)).$(ABI_VERSION)
+$(LIB_TARGET_SO_FULL): LDFLAGS += -shared -fPIC $(_SONAME_OPTION)
+
 
 $(LIB_TARGET_SO_BARE) $(LIB_TARGET_SO_ABI): $(LIB_TARGET_SO_FULL)
 	ln -fs $(notdir $(LIB_TARGET_SO_FULL)) $@
