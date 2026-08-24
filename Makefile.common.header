@@ -58,14 +58,52 @@ endef
 dirs_to_dotdot = $(subst $(SPACE),/,$(patsubst %,..,$(subst /, ,$1)))
 get_parentdir_relative_to_childdir = /$(call dirs_to_dotdot,$(patsubst $1%,%,$2))
 
-RPATH_SUFFIX = $(call get_parentdir_relative_to_childdir,$(abspath .),$(dir $(abspath $1)))
+_RPATH_SUFFIX = $(call get_parentdir_relative_to_childdir,$(abspath .),$(dir $(abspath $1)))
 ifeq ($(COND_DARWIN),)
-  RPATH = '$$ORIGIN'$(RPATH_SUFFIX)
+  _RPATH = '$$ORIGIN'$(_RPATH_SUFFIX)
 else
-  RPATH = @loader_path$(RPATH_SUFFIX)
+  _RPATH = @loader_path$(_RPATH_SUFFIX)
 endif
 
-RPATH_OPTION = -Wl,-rpath,$(call RPATH,$@)
+_RPATH_OPTION = -Wl,-rpath,$(call _RPATH,$@)
+
+_SONAME = $(notdir $(patsubst %.$(TAIL_VERSION),%,$@))
+ifeq ($(COND_DARWIN),)
+  _SONAME_OPTION = -Wl,--default-symver -Wl,-soname,$(_SONAME)
+else
+  _SONAME_OPTION = -dynamiclib -Wl,-install_name,@rpath/$(_SONAME)
+endif
+_LDFLAGS_LIB = -shared -fPIC $(_RPATH_OPTION) $(_SONAME_OPTION)
+
+
+
+### Main macro to define a library. This is called from Makefile.common.footer
+### to define the build for the main library. The project Makefile can also call
+### it to add more libraries
+###
+### The extra libraries using this function will be built and installed exactly
+### like the main library. The user will need to depend on and link to this
+### library, as needed.
+# Usage: $(eval $(call MRBUILD_ADD_LIBRARY, libthing-extra, aaa.c bbb.c ccc.c))
+define MRBUILD_ADD_LIBRARY
+
+_LIB_SOURCES_ALL += $2
+_LIB_TARGETS_ALL += $1.$$(SO) $1.$$(SO).$$(ABI_VERSION) $1.$$(SO).$$(ABI_VERSION).$$(TAIL_VERSION)
+
+all: $1.$$(SO) $1.$$(SO).$$(ABI_VERSION) $1.$$(SO).$$(ABI_VERSION).$$(TAIL_VERSION)
+
+$1.$$(SO).$$(ABI_VERSION).$$(TAIL_VERSION): LDFLAGS += $$(_LDFLAGS_LIB)
+
+$1.$$(SO) $1.$$(SO).$$(ABI_VERSION): $1.$$(SO).$$(ABI_VERSION).$$(TAIL_VERSION)
+	ln -fs $$(notdir $1.$$(SO).$$(ABI_VERSION).$$(TAIL_VERSION)) $$@
+
+# Here instead of specifying $^, I do just the %.o parts and then the
+# others. This is required to make the linker happy to see the dependent
+# objects first and the dependency objects last. Same as for BIN_TARGETS
+$1.$$(SO).$$(ABI_VERSION).$$(TAIL_VERSION): $$(addsuffix .o,$$(basename $2))
+	$$(CC_LINKER) $$(LDFLAGS) $$(filter %.o, $$^) $$(filter-out %.o, $$^) $$(LDLIBS) -o $$@
+
+endef
 
 
 
@@ -226,7 +264,7 @@ _PY_MRBUILD_CFLAGS += -Wno-int-conversion
 # executable, so the library will already be loaded. And in some situations
 # (static linking), passing $(_PY_BLDLIBRARY) by itself doesn't actually work:
 #   https://github.com/dkogan/mrcal/issues/22
-_PY_MRBUILD_LDFLAGS = $(RPATH_OPTION) $(_PY_LDFLAGS) -L$(abspath .)
+_PY_MRBUILD_LDFLAGS = $(_RPATH_OPTION) $(_PY_LDFLAGS) -L$(abspath .)
 _PY_MRBUILD_LINKER  = $(_PY_BLDSHARED)
 endef
 

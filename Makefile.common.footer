@@ -80,25 +80,31 @@ CCXXFLAGS += -g
 # I want the frame pointer. Makes walking the stack WAY easier
 CCXXFLAGS += -fno-omit-frame-pointer
 
-LIB_OBJECTS := $(addsuffix .o,$(basename $(LIB_SOURCES)))
-BIN_OBJECTS := $(addsuffix .o,$(basename $(BIN_SOURCES)))
 
-SOURCE_DIRS := $(sort ./ $(dir $(LIB_SOURCES) $(BIN_SOURCES)))
-
+### Definitions for the main project library
 # if the PROJECT_NAME is libxxx then LIB_NAME is libxxx
 # if the PROJECT_NAME is xxx    then LIB_NAME is libxxx
-LIB_NAME           := $(or $(filter lib%,$(PROJECT_NAME)),lib$(PROJECT_NAME))
+ifneq ((strip $(LIB_SOURCES)),)
+LIB_NAME := $(or $(filter lib%,$(PROJECT_NAME)),lib$(PROJECT_NAME))
+$(eval $(call MRBUILD_ADD_LIBRARY, $(LIB_NAME),$(LIB_SOURCES)))
+
+LIB_OBJECTS := $(addsuffix .o,$(basename $(LIB_SOURCES)))
 LIB_TARGET_SO_BARE := $(LIB_NAME).$(SO)
 LIB_TARGET_SO_ABI  := $(LIB_TARGET_SO_BARE).$(ABI_VERSION)
 LIB_TARGET_SO_FULL := $(LIB_TARGET_SO_ABI).$(TAIL_VERSION)
 LIB_TARGET_SO_ALL  := $(LIB_TARGET_SO_BARE) $(LIB_TARGET_SO_ABI) $(LIB_TARGET_SO_FULL)
+endif
 
 BIN_TARGETS := $(basename $(BIN_SOURCES))
+BIN_OBJECTS := $(addsuffix .o,$(basename $(BIN_SOURCES)))
 
+
+_LIB_OBJECTS_ALL = $(addsuffix .o,$(basename $(_LIB_SOURCES_ALL)))
+_SOURCE_DIRS := $(sort ./ $(dir $(_LIB_SOURCES_ALL) $(BIN_SOURCES)))
 
 # all objects built for inclusion in shared libraries get -fPIC. We don't build
 # static libraries, so this is 100% correct
-$(LIB_OBJECTS): CCXXFLAGS += -fPIC
+$(_LIB_OBJECTS_ALL): CCXXFLAGS += -fPIC
 
 CCXXFLAGS += -DMRBUILD_VERSION='"$(VERSION)"'
 
@@ -198,28 +204,9 @@ EXTRA_CLEAN += *.docstring.h
 
 # by default I build shared libraries only. We known how to build static
 # libraries too, but I don't do it unless asked
-all: $(if $(strip $(LIB_SOURCES)),$(LIB_TARGET_SO_ALL)) $(if $(strip $(BIN_SOURCES)),$(BIN_TARGETS))
+all: $(if $(strip $(BIN_SOURCES)),$(BIN_TARGETS))
 .PHONY: all
 .DEFAULT_GOAL := all
-
-_SONAME := $(notdir $(LIB_TARGET_SO_BARE)).$(ABI_VERSION)
-ifeq ($(COND_DARWIN),)
-  _SONAME_OPTION := -Wl,--default-symver -Wl,-soname$(COMMA)$(_SONAME)
-else
-  _SONAME_OPTION := -dynamiclib -Wl,-install_name$(COMMA)@rpath/$(_SONAME)
-endif
-
-$(LIB_TARGET_SO_FULL): LDFLAGS += -shared -fPIC $(RPATH_OPTION) $(_SONAME_OPTION)
-
-
-$(LIB_TARGET_SO_BARE) $(LIB_TARGET_SO_ABI): $(LIB_TARGET_SO_FULL)
-	ln -fs $(notdir $(LIB_TARGET_SO_FULL)) $@
-
-# Here instead of specifying $^, I do just the %.o parts and then the
-# others. This is required to make the linker happy to see the dependent
-# objects first and the dependency objects last. Same as for BIN_TARGETS
-$(LIB_TARGET_SO_FULL): $(LIB_OBJECTS)
-	$(CC_LINKER) $(LDFLAGS) $(filter %.o, $^) $(filter-out %.o, $^) $(LDLIBS) -o $@
 
 # I make sure to give the .o to the linker before the .so and everything else.
 # The .o may depend on the other stuff.
@@ -232,11 +219,11 @@ $(LIB_TARGET_SO_FULL): $(LIB_OBJECTS)
 # Here $^ contains two flavors of LIB_TARGET (see next stanza), so I manually
 # remove one
 $(BIN_TARGETS): %: %.o
-	$(CC_LINKER) $(RPATH_OPTION) $(LDFLAGS) $(filter %.o, $^) $(filter-out $(LIB_TARGET_SO_ABI),$(filter-out %.o, $^)) $(LDLIBS) -o $@
+	$(CC_LINKER) $(_RPATH_OPTION) $(LDFLAGS) $(filter %.o, $^) $(filter-out $(LIB_TARGET_SO_ABI),$(filter-out %.o, $^)) $(LDLIBS) -o $@
 
 # The binaries link with the DSO, if there is one. I need the libxxx.so to build
 # the binary, and I need the libxxx.so.abi to run it.
-$(BIN_TARGETS): $(if $(strip $(LIB_SOURCES)),$(LIB_TARGET_SO_BARE) $(LIB_TARGET_SO_ABI))
+$(BIN_TARGETS): $(LIB_TARGET_SO_BARE) $(LIB_TARGET_SO_ABI)
 
 %.$(SO).dump: %.$(SO)
 	abi-dumper $< -o $@
@@ -245,7 +232,7 @@ EXTRA_CLEAN += *.$(SO).dump
 
 
 clean:
-	rm -rf $(foreach d,$(SOURCE_DIRS),$(addprefix $d,*.a *.o *.so *.so.* *.dylib *.dylib.* *.d moc_* ui_*.h*)) $(BIN_TARGETS) $(foreach s,.c .h,$(addsuffix $s,$(basename $(shell find . -name '*.ggo')))) $(EXTRA_CLEAN)
+	rm -rf $(foreach d,$(_SOURCE_DIRS),$(addprefix $d,*.a *.o *.so *.so.* *.dylib *.dylib.* *.d moc_* ui_*.h*)) $(BIN_TARGETS) $(foreach s,.c .h,$(addsuffix $s,$(basename $(shell find . -name '*.ggo')))) $(EXTRA_CLEAN)
 distclean: clean
 
 .PHONY: distclean clean
@@ -344,7 +331,7 @@ else
   endef
 endif
 
-define MRBUILD_STRIP_RPATH
+define _STRIP_RPATH
   # I look at .$(SO) and .so because python always uses .so, even though on
   # macos it's normally .dylib (i.e. .$(SO))
   find $(DESTDIR) ! -type l -type f \
@@ -356,18 +343,12 @@ endef
 
 
 
-ifneq ($(strip $(LIB_SOURCES)),)
-install: $(LIB_TARGET_SO_ALL)
-endif
-
-install: $(BIN_TARGETS) $(DIST_DOC) $(DIST_MAN) $(DIST_DATA)
+install: $(_LIB_TARGETS_ALL) $(BIN_TARGETS) $(DIST_DOC) $(DIST_MAN) $(DIST_DATA)
 
 # using 'cp -P' instead of 'install' because the latter follows links unconditionally
-ifneq ($(strip $(LIB_SOURCES)),)
+ifneq ($(strip $(_LIB_TARGETS_ALL)),)
 	mkdir -p $(DESTDIR)/$(INSTALL_ROOT_LIB)
-	cp -P $(LIB_TARGET_SO_FULL)  $(DESTDIR)/$(INSTALL_ROOT_LIB)
-	ln -fs $(notdir $(LIB_TARGET_SO_FULL)) $(DESTDIR)/$(INSTALL_ROOT_LIB)/$(notdir $(LIB_TARGET_SO_ABI))
-	ln -fs $(notdir $(LIB_TARGET_SO_FULL)) $(DESTDIR)/$(INSTALL_ROOT_LIB)/$(notdir $(LIB_TARGET_SO_BARE))
+	cp -P $(_LIB_TARGETS_ALL) $(DESTDIR)/$(INSTALL_ROOT_LIB)
 endif
 	$(call install_rule,DIST_BIN,         $(DESTDIR)/$(INSTALL_ROOT_BIN))
 	$(call install_rule,DIST_INCLUDE,     $(DESTDIR)/$(INSTALL_ROOT_INCLUDE))
@@ -391,7 +372,7 @@ endif
         # This is required because Make can't deal with : in rules
 	for fil in `find $(DESTDIR) -name '*__colon__*'`; do mv $$fil `echo $$fil | sed s/__colon__/:/g`; done
 
-	$(MRBUILD_STRIP_RPATH)
+	$(_STRIP_RPATH)
 
         # Any perl programs need their binary path stuff stripped out. This
         # exists to let these run in-tree, but needs to be removed at
@@ -493,4 +474,4 @@ else
 endif
 
 # the header dependencies
--include $(addsuffix *.d,$(SOURCE_DIRS))
+-include $(addsuffix *.d,$(_SOURCE_DIRS))
