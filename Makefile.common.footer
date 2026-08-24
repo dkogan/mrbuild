@@ -322,7 +322,7 @@ ifeq ($(COND_DARWIN),)
   _STRIP_RPATH_FILES := xargs chrpath -d -k 2>/dev/null || true
 else
   # Mac. We remove all @loader_path RPATHs, since presumably I added all these.
-  define _STRIP_RPATH_FILES :=
+  define _STRIP_RPATH_FILES
     while read f; do \
 	otool -l "$$f" | \
 	awk '/LC_RPATH/,/path / { if (/path / && $$2 ~ /^@loader_path/) print $$2 }' | \
