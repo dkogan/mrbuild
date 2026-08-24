@@ -63,7 +63,7 @@ Each project builds a library (a /shared/ object) and optionally, some
 executables. mrbuild knows how to build commonly-used things: QT interfaces,
 python extensions, etc. Intentionally, there's no mechanism to "find" dependency
 libraries: you should know where your dependencies live, and you can tell Make
-yourself the normal way: with =CFLAGS= and =LDFLAGS=.
+yourself the normal way: with =CFLAGS= and =LDLIBS=.
 
 mrbuild will set up the =RPATH= tags to make the current directory findable.
 Thus executables can be run without installing, and they will link with the
@@ -282,6 +282,25 @@ Each of these may be overridden by the user, and the default value is given
 above. Most of the time, the defaults should be used, and these should be
 omitted.
 
+*** Extra libraries
+By default a mrbuild project defines /one/ project library and some number of
+binaries linking to this. It is possible to define other libraries as well by
+calling the =MRBUILD_ADD_LIBRARY= function. For instance:
+
+#+begin_src make
+$(eval $(call MRBUILD_ADD_LIBRARY, libextra, extra1.c extra2.c))
+
+LIB_EXTRA := libextra.$(SO).$(ABI_VERSION).$(TAIL_VERSION)
+
+$(LIB_EXTRA): lib$(PROJECT_NAME).$(SO)
+$(LIB_EXTRA): LDLIBS += -lthing
+
+BIN_SOURCES += \
+  test-extra.cc
+
+test-extra: $(LIB_EXTRA)
+#+end_src
+
 *** QT GUIs
 
 mrbuild has rules to handle QT moc and =.ui= stuff. An executable that uses QT
@@ -429,6 +448,10 @@ EXTRA_CLEAN += frobnicator/*.so
 
 include /usr/include/mrbuild/Makefile.common.footer
 #+END_SRC
+
+* Portability
+This assumes a recent-ish GNU Make; 4.3 should work. This has been tested and
+used extensively on Linux and mac systems.
 
 * MAINTAINER
 This is maintained by Dima Kogan <dima@secretsauce.net>
