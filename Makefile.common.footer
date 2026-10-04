@@ -378,7 +378,7 @@ endif
         # exists to let these run in-tree, but needs to be removed at
         # install-time (similar to an RPATH)
 ifneq ($(strip $(DIST_BIN)),)
-	for fil in `find $(DESTDIR)/$(INSTALL_ROOT_BIN) -type f`; do head -n1 $$fil | grep -q '^#!.*/perl$$' && perl -n -i -e 'print unless /^\s* use \s+ lib \b/x' $$fil || true; done
+	for fil in `find $(DESTDIR)/$(INSTALL_ROOT_BIN) -type f`; do head -n1 $$fil | grep -qE '^#!.*[/ ]perl([[:space:]]|$$)' && perl -n -i -e 'print unless /^\s* use \s+ lib \b/x' $$fil || true; done
 endif
 	test -e $(DESTDIR)/$(INSTALL_ROOT_PERL_MODULES) && find $(DESTDIR)/$(INSTALL_ROOT_PERL_MODULES) -type f | xargs perl -n -i -e 'print unless /^\s* use \s+ lib \b/x' || true
 
