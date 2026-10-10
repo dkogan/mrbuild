@@ -37,6 +37,13 @@ DPKG_ARCHITECTURE_EVAL = $(foreach v,$(shell dpkg-architecture 2>/dev/null),$(ev
 # needed, at most once
 DEB_HOST_GNU_TYPE  = $(if $(_DEB_HOST_GNU_TYPE),,$(strip $(DPKG_ARCHITECTURE_EVAL)))$(_DEB_HOST_GNU_TYPE)
 DEB_HOST_MULTIARCH = $(if $(_DEB_HOST_MULTIARCH),,$(strip $(DPKG_ARCHITECTURE_EVAL)))$(_DEB_HOST_MULTIARCH)
+DEB_BUILD_MULTIARCH = $(if $(_DEB_BUILD_MULTIARCH),,$(strip $(DPKG_ARCHITECTURE_EVAL)))$(_DEB_BUILD_MULTIARCH)
+# Non-empty if we're cross-building with Debian: the host multiarch differs from
+# the build multiarch. An empty DEB_HOST_MULTIARCH means a native build.
+# DEB_HOST_MULTIARCH must be expanded first: if DEB_BUILD_MULTIARCH calls
+# dpkg-architecture instead, a DEB_HOST_MULTIARCH from the environment (from
+# dpkg-buildpackage -a) is lost
+_CROSS_BUILDING = $(and $(DEB_HOST_MULTIARCH),$(filter-out $(DEB_BUILD_MULTIARCH),$(DEB_HOST_MULTIARCH)))
 TOOL_ARCH_PREFIX = $(if $(DEB_HOST_GNU_TYPE),$(DEB_HOST_GNU_TYPE)-)
 PKG_CONFIG     ?= $(TOOL_ARCH_PREFIX)pkg-config
 NM             ?= $(TOOL_ARCH_PREFIX)nm
@@ -160,9 +167,10 @@ PYTHON_VERSION_FOR_EXTENSIONS ?= 3 # 2 or 3
 # Variables to ask Python about
 _PYVARS_LIST := CC CFLAGS CCSHARED INCLUDEPY BLDSHARED BLDLIBRARY LDFLAGS EXT_SUFFIX MULTIARCH
 
-ifneq ($(DEB_HOST_MULTIARCH),)
-  # We have a debian multiarch. We're almost certainly cross-building with
-  # Debian. Try to get the variables directly, using any-architecture python
+ifneq ($(_CROSS_BUILDING),)
+  # We're cross-building with Debian. Try to get the variables directly, using
+  # any-architecture python. When building natively, sysconfig already reports
+  # the right values, and any python (not just Debian's) works
   define _PYVARS_GET_CONFIG
 import ast
 import sys
@@ -244,7 +252,15 @@ _PYVARS = $(shell python$(PYTHON_VERSION_FOR_EXTENSIONS) -c '$(_PYVARS_SCRIPT)')
 $(foreach setvarcmd,$(_PYVARS),$(eval $(subst __whitespace__, ,$(setvarcmd))))
 ifeq ($(_INCLUDENUMPY_FROM_PYTHON),)
   # Add the numpy include path. See https://bugs.debian.org/1067398
-  _PY_INCLUDEPY += $(patsubst -I%,%,$(shell $(PKG_CONFIG) --cflags-only-I numpy 2>/dev/null))
+  _PY_INCLUDEPY_NUMPY := $(patsubst -I%,%,$(shell $(PKG_CONFIG) --cflags-only-I numpy 2>/dev/null))
+  # If numpy has no .pc file (installed with pip, in a virtualenv, ...), ask
+  # the Python instead. Unless cross-building: that Python isn't the host's. If
+  # this python has no numpy either (an extension that doesn't use it, say),
+  # quietly add nothing, as before
+  ifeq ($(_PY_INCLUDEPY_NUMPY)$(_CROSS_BUILDING),)
+    _PY_INCLUDEPY_NUMPY := $(shell python$(PYTHON_VERSION_FOR_EXTENSIONS) -c 'import numpy; print(numpy.get_include())' 2>/dev/null)
+  endif
+  _PY_INCLUDEPY += $(_PY_INCLUDEPY_NUMPY)
 endif
 # pull out flags from CC, throw out the compiler itself, since I know better
 _FLAGS_FROM_PYCC    = $(wordlist 2,$(words $(_PY_CC)),$(_PY_CC))
