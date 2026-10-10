@@ -317,9 +317,17 @@ endef
 
 
 ifeq ($(COND_DARWIN),)
-  # Remove rpaths from everything. It is allowed to fail because some /usr/bin
-  # executables may not be ELF files
-  _STRIP_RPATH_FILES := xargs chrpath -d -k 2>/dev/null || true
+  # Linux. We remove all $ORIGIN RPATHs, since presumably I added all these.
+  # Other rpaths (added by a packager via LDFLAGS, for instance) are kept. If
+  # nothing is left, the rpath is deleted entirely. This is allowed to fail
+  # because some /usr/bin executables may not be ELF files
+  define _STRIP_RPATH_FILES
+    while read f; do \
+	keep=$$($(OBJDUMP) -p "$$f" 2>/dev/null | \
+	        perl -ne 'next unless ($$r)=/^\s*R(?:UN)?PATH\s+(.*?)\s*$$/; $$,=":"; print grep /./, grep !/\$$ORIGIN/, split(":",$$r)'); \
+	if test -n "$$keep"; then chrpath -r "$$keep" "$$f"; else chrpath -d "$$f"; fi 2>/dev/null || true; \
+    done;
+  endef
 else
   # Mac. We remove all @loader_path RPATHs, since presumably I added all these.
   define _STRIP_RPATH_FILES
