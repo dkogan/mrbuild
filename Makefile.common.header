@@ -252,7 +252,15 @@ _PYVARS = $(shell python$(PYTHON_VERSION_FOR_EXTENSIONS) -c '$(_PYVARS_SCRIPT)')
 $(foreach setvarcmd,$(_PYVARS),$(eval $(subst __whitespace__, ,$(setvarcmd))))
 ifeq ($(_INCLUDENUMPY_FROM_PYTHON),)
   # Add the numpy include path. See https://bugs.debian.org/1067398
-  _PY_INCLUDEPY += $(patsubst -I%,%,$(shell $(PKG_CONFIG) --cflags-only-I numpy 2>/dev/null))
+  _PY_INCLUDEPY_NUMPY := $(patsubst -I%,%,$(shell $(PKG_CONFIG) --cflags-only-I numpy 2>/dev/null))
+  # If numpy has no .pc file (installed with pip, in a virtualenv, ...), ask
+  # the Python instead. Unless cross-building: that Python isn't the host's. If
+  # this python has no numpy either (an extension that doesn't use it, say),
+  # quietly add nothing, as before
+  ifeq ($(_PY_INCLUDEPY_NUMPY)$(_CROSS_BUILDING),)
+    _PY_INCLUDEPY_NUMPY := $(shell python$(PYTHON_VERSION_FOR_EXTENSIONS) -c 'import numpy; print(numpy.get_include())' 2>/dev/null)
+  endif
+  _PY_INCLUDEPY += $(_PY_INCLUDEPY_NUMPY)
 endif
 # pull out flags from CC, throw out the compiler itself, since I know better
 _FLAGS_FROM_PYCC    = $(wordlist 2,$(words $(_PY_CC)),$(_PY_CC))
