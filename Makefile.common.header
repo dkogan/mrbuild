@@ -301,6 +301,8 @@ CFLAGS   += -I$1
 CXXFLAGS += -I$1
 LDFLAGS  += -L$1
 LDFLAGS += -Wl,-rpath,$1
+# for "make install" to strip
+_LOCAL_LIBRARY_RPATHS += $(strip $1)
 endef
 
 
