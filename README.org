@@ -290,7 +290,8 @@ calling the =MRBUILD_ADD_LIBRARY= function. For instance:
 #+begin_src make
 $(eval $(call MRBUILD_ADD_LIBRARY, libextra, extra1.c extra2.c))
 
-LIB_EXTRA := libextra.$(SO).$(ABI_VERSION).$(TAIL_VERSION)
+# libextra.so.ABI.TAIL on Linux, libextra.ABI.TAIL.dylib on macOS
+LIB_EXTRA := $(call _LIB_FULL,libextra)
 
 $(LIB_EXTRA): lib$(PROJECT_NAME).$(SO)
 $(LIB_EXTRA): LDLIBS += -lthing

@@ -67,7 +67,18 @@ endif
 
 _RPATH_OPTION = -Wl,-rpath,$(call _RPATH,$@)
 
-_SONAME = $(notdir $(patsubst %.$(TAIL_VERSION),%,$@))
+# The SONAME (install name on macOS) drops the TAIL_VERSION: libxxx.so.ABI or
+# libxxx.ABI.dylib
+_SONAME = $(notdir $(if $(COND_DARWIN),$(patsubst %.$(TAIL_VERSION).$(SO),%.$(SO),$@),$(patsubst %.$(TAIL_VERSION),%,$@)))
+
+# Versioned library names. On Linux these are libxxx.so.ABI and
+# libxxx.so.ABI.TAIL. On macOS the version goes before the suffix, as the macOS
+# tools expect: libxxx.ABI.dylib and libxxx.ABI.TAIL.dylib
+_LIB_ABI  = $(strip $1)$(if $(COND_DARWIN),.$(ABI_VERSION).$(SO),.$(SO).$(ABI_VERSION))
+_LIB_FULL = $(strip $1)$(if $(COND_DARWIN),.$(ABI_VERSION).$(TAIL_VERSION).$(SO),.$(SO).$(ABI_VERSION).$(TAIL_VERSION))
+# On macOS, project Makefiles may still refer to the Linux-style
+# libxxx.dylib.ABI, so it's made in the build tree too, but not installed
+_LIB_COMPAT = $(if $(COND_DARWIN),$(strip $1).$(SO).$(ABI_VERSION))
 ifeq ($(COND_DARWIN),)
   _SONAME_OPTION = -Wl,--default-symver -Wl,-soname,$(_SONAME)
 else
@@ -88,19 +99,19 @@ _LDFLAGS_LIB = -shared -fPIC $(_RPATH_OPTION) $(_SONAME_OPTION)
 define MRBUILD_ADD_LIBRARY
 
 _LIB_SOURCES_ALL += $2
-_LIB_TARGETS_ALL += $1.$$(SO) $1.$$(SO).$$(ABI_VERSION) $1.$$(SO).$$(ABI_VERSION).$$(TAIL_VERSION)
+_LIB_TARGETS_ALL += $1.$$(SO) $$(call _LIB_ABI,$1) $$(call _LIB_FULL,$1)
 
-all: $1.$$(SO) $1.$$(SO).$$(ABI_VERSION) $1.$$(SO).$$(ABI_VERSION).$$(TAIL_VERSION)
+all: $1.$$(SO) $$(call _LIB_ABI,$1) $$(call _LIB_FULL,$1) $$(call _LIB_COMPAT,$1)
 
-$1.$$(SO).$$(ABI_VERSION).$$(TAIL_VERSION): LDFLAGS += $$(_LDFLAGS_LIB)
+$$(call _LIB_FULL,$1): LDFLAGS += $$(_LDFLAGS_LIB)
 
-$1.$$(SO) $1.$$(SO).$$(ABI_VERSION): $1.$$(SO).$$(ABI_VERSION).$$(TAIL_VERSION)
-	ln -fs $$(notdir $1.$$(SO).$$(ABI_VERSION).$$(TAIL_VERSION)) $$@
+$1.$$(SO) $$(call _LIB_ABI,$1) $$(call _LIB_COMPAT,$1): $$(call _LIB_FULL,$1)
+	ln -fs $$(notdir $$(call _LIB_FULL,$1)) $$@
 
 # Here instead of specifying $^, I do just the %.o parts and then the
 # others. This is required to make the linker happy to see the dependent
 # objects first and the dependency objects last. Same as for BIN_TARGETS
-$1.$$(SO).$$(ABI_VERSION).$$(TAIL_VERSION): $$(addsuffix .o,$$(basename $2))
+$$(call _LIB_FULL,$1): $$(addsuffix .o,$$(basename $2))
 	$$(CC_LINKER) $$(LDFLAGS) $$(filter %.o, $$^) $$(filter-out %.o, $$^) $$(LDLIBS) -o $$@
 
 endef
