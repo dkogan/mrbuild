@@ -282,6 +282,21 @@ Each of these may be overridden by the user, and the default value is given
 above. Most of the time, the defaults should be used, and these should be
 omitted.
 
+*** Shared-library naming
+The variable =$(SO)= is defined as the shared-library suffix: =so= on Linux and
+=dylib= on macos. The main library built by a mrbuild project is called
+=lib$(PROJECT_NAME).$(SO)=. On linux this and
+=lib$(PROJECT_NAME).$(SO).$(ABI_VERSION)= are symlinks to
+=lib$(PROJECT_NAME).$(SO).$(ABI_VERSION).$(TAIL_VERSION)=. On macos these are
+called =lib$(PROJECT_NAME).$(ABI_VERSION).$(SO)= and
+=lib$(PROJECT_NAME).$(ABI_VERSION).$(TAIL_VERSION).$(SO)= instead: note that
+=.$(SO)= is in a different place. If you need to refer to these in your
+=Makefile=, and you only care about one of these platforms, feel free to use the
+hardcoded =lib$(PROJECT_NAME).so= name directly. If you want your project to
+work on both, you can =$(call MRBUILD_LIBSO_ABI lib$(PROJECT_NAME))= and =$(call
+MRBUILD_LIBSO_FULL lib$(PROJECT_NAME))= instead. Most of the time, you don't
+need to refer to these at all.
+
 *** Extra libraries
 By default a mrbuild project defines /one/ project library and some number of
 binaries linking to this. It is possible to define other libraries as well by
@@ -290,7 +305,7 @@ calling the =MRBUILD_ADD_LIBRARY= function. For instance:
 #+begin_src make
 $(eval $(call MRBUILD_ADD_LIBRARY, libextra, extra1.c extra2.c))
 
-LIB_EXTRA := libextra.$(SO).$(ABI_VERSION).$(TAIL_VERSION)
+LIB_EXTRA := $(call MRBUILD_LIBSO_FULL lib$(PROJECT_NAME))
 
 $(LIB_EXTRA): lib$(PROJECT_NAME).$(SO)
 $(LIB_EXTRA): LDLIBS += -lthing

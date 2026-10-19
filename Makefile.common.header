@@ -26,7 +26,6 @@
 
 # osx
 COND_DARWIN := $(filter Darwin,$(shell uname -s))
-SO          := $(if $(COND_DARWIN),dylib,so)
 
 ### For cross-building on Debian. If these tools aren't already defined, I
 ### define them. This will work on Debian when building natively OR
@@ -59,20 +58,24 @@ dirs_to_dotdot = $(subst $(SPACE),/,$(patsubst %,..,$(subst /, ,$1)))
 get_parentdir_relative_to_childdir = /$(call dirs_to_dotdot,$(patsubst $1%,%,$2))
 
 _RPATH_SUFFIX = $(call get_parentdir_relative_to_childdir,$(abspath .),$(dir $(abspath $1)))
-ifeq ($(COND_DARWIN),)
-  _RPATH = '$$ORIGIN'$(_RPATH_SUFFIX)
-else
-  _RPATH = @loader_path$(_RPATH_SUFFIX)
-endif
 
+# Linux wants libxxx.so.1.2.3. Macos wants libxxx.1.2.3.dylib.
+ifeq ($(COND_DARWIN),)
+  SO                    := so
+  _RPATH		= '$$ORIGIN'$(_RPATH_SUFFIX)
+  _SONAME		= $(notdir $(patsubst %.$(TAIL_VERSION),%,$@))
+  _SONAME_OPTION	= -Wl,--default-symver -Wl,-soname,$(_SONAME)
+  MRBUILD_LIBSO_ABI	= $1.$(SO).$(ABI_VERSION)
+  MRBUILD_LIBSO_FULL	= $1.$(SO).$(ABI_VERSION).$(TAIL_VERSION)
+else
+  SO                    := dylib
+  _RPATH		= @loader_path$(_RPATH_SUFFIX)
+  _SONAME		= $(notdir $(patsubst %.$(TAIL_VERSION).$(SO),%.$(SO),$@))
+  _SONAME_OPTION	= -dynamiclib -Wl,-install_name,@rpath/$(_SONAME)
+  MRBUILD_LIBSO_ABI	= $1.$(ABI_VERSION).$(SO)
+  MRBUILD_LIBSO_FULL	= $1.$(ABI_VERSION).$(TAIL_VERSION).$(SO)
+endif
 _RPATH_OPTION = -Wl,-rpath,$(call _RPATH,$@)
-
-_SONAME = $(notdir $(patsubst %.$(TAIL_VERSION),%,$@))
-ifeq ($(COND_DARWIN),)
-  _SONAME_OPTION = -Wl,--default-symver -Wl,-soname,$(_SONAME)
-else
-  _SONAME_OPTION = -dynamiclib -Wl,-install_name,@rpath/$(_SONAME)
-endif
 _LDFLAGS_LIB = -shared -fPIC $(_RPATH_OPTION) $(_SONAME_OPTION)
 
 
@@ -88,19 +91,18 @@ _LDFLAGS_LIB = -shared -fPIC $(_RPATH_OPTION) $(_SONAME_OPTION)
 define MRBUILD_ADD_LIBRARY
 
 _LIB_SOURCES_ALL += $2
-_LIB_TARGETS_ALL += $1.$$(SO) $1.$$(SO).$$(ABI_VERSION) $1.$$(SO).$$(ABI_VERSION).$$(TAIL_VERSION)
+_LIB_TARGETS_ALL += $1.$$(SO) $$(call MRBUILD_LIBSO_ABI,$1) $$(call MRBUILD_LIBSO_FULL,$1)
+all:                $1.$$(SO) $$(call MRBUILD_LIBSO_ABI,$1) $$(call MRBUILD_LIBSO_FULL,$1)
 
-all: $1.$$(SO) $1.$$(SO).$$(ABI_VERSION) $1.$$(SO).$$(ABI_VERSION).$$(TAIL_VERSION)
+$$(call MRBUILD_LIBSO_FULL,$1): LDFLAGS += $$(_LDFLAGS_LIB)
 
-$1.$$(SO).$$(ABI_VERSION).$$(TAIL_VERSION): LDFLAGS += $$(_LDFLAGS_LIB)
-
-$1.$$(SO) $1.$$(SO).$$(ABI_VERSION): $1.$$(SO).$$(ABI_VERSION).$$(TAIL_VERSION)
-	ln -fs $$(notdir $1.$$(SO).$$(ABI_VERSION).$$(TAIL_VERSION)) $$@
+$1.$$(SO) $$(call MRBUILD_LIBSO_ABI,$1): $$(call MRBUILD_LIBSO_FULL,$1)
+	ln -fs $$(notdir $$(call MRBUILD_LIBSO_FULL,$1)) $$@
 
 # Here instead of specifying $^, I do just the %.o parts and then the
 # others. This is required to make the linker happy to see the dependent
 # objects first and the dependency objects last. Same as for BIN_TARGETS
-$1.$$(SO).$$(ABI_VERSION).$$(TAIL_VERSION): $$(addsuffix .o,$$(basename $2))
+$$(call MRBUILD_LIBSO_FULL,$1): $$(addsuffix .o,$$(basename $2))
 	$$(CC_LINKER) $$(LDFLAGS) $$(filter %.o, $$^) $$(filter-out %.o, $$^) $$(LDLIBS) -o $$@
 
 endef
