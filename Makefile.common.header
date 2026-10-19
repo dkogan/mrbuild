@@ -94,7 +94,7 @@ _LIB_SOURCES_ALL += $2
 _LIB_TARGETS_ALL += $1.$$(SO) $$(call MRBUILD_LIBSO_ABI,$1) $$(call MRBUILD_LIBSO_FULL,$1)
 all:                $1.$$(SO) $$(call MRBUILD_LIBSO_ABI,$1) $$(call MRBUILD_LIBSO_FULL,$1)
 
-$$(call MRBUILD_LIBSO_FULL,$1): LDFLAGS += $$(_LDFLAGS_LIB)
+$$(call MRBUILD_LIBSO_FULL,$1): private LDFLAGS += $$(_LDFLAGS_LIB)
 
 $1.$$(SO) $$(call MRBUILD_LIBSO_ABI,$1): $$(call MRBUILD_LIBSO_FULL,$1)
 	ln -fs $$(notdir $$(call MRBUILD_LIBSO_FULL,$1)) $$@

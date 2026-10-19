@@ -308,7 +308,7 @@ $(eval $(call MRBUILD_ADD_LIBRARY, libextra, extra1.c extra2.c))
 LIB_EXTRA := $(call MRBUILD_LIBSO_FULL lib$(PROJECT_NAME))
 
 $(LIB_EXTRA): lib$(PROJECT_NAME).$(SO)
-$(LIB_EXTRA): LDLIBS += -lthing
+$(LIB_EXTRA): private LDLIBS += -lthing
 
 BIN_SOURCES += \
   test-extra.cc
