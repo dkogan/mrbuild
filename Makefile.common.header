@@ -164,7 +164,10 @@ PYTHON_VERSION_FOR_EXTENSIONS ?= 3 # 2 or 3
 # Variables to ask Python about
 _PYVARS_LIST := CC CFLAGS CCSHARED INCLUDEPY BLDSHARED BLDLIBRARY LDFLAGS EXT_SUFFIX MULTIARCH
 
-ifneq ($(filter-out $(DEB_BUILD_MULTIARCH),$(DEB_HOST_MULTIARCH)),)
+# DEB_HOST_MULTIARCH must be expanded first: if DEB_BUILD_MULTIARCH calls
+# dpkg-architecture instead, a DEB_HOST_MULTIARCH from the environment (from
+# dpkg-buildpackage -a) is lost
+ifneq ($(and $(DEB_HOST_MULTIARCH),$(filter-out $(DEB_BUILD_MULTIARCH),$(DEB_HOST_MULTIARCH))),)
   # We're cross-building with Debian. Try to get the variables directly, using
   # any-architecture python. When building natively, sysconfig already reports
   # the right values, and any python (not just Debian's) works
