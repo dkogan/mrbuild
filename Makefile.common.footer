@@ -336,11 +336,14 @@ ifeq ($(COND_DARWIN),)
   # Linux. We remove all $ORIGIN RPATHs, since presumably I added all these.
   # Other rpaths (added by a packager via LDFLAGS, for instance) are kept. If
   # nothing is left, the rpath is deleted entirely. This is allowed to fail
-  # because some /usr/bin executables may not be ELF files
+  # because some /usr/bin executables may not be ELF files. The rpath is read
+  # with chrpath, not $(OBJDUMP): that's $(DEB_HOST_GNU_TYPE)-objdump on any
+  # host with dpkg-architecture, which Fedora, for one, lacks, and then
+  # the whole rpath would be deleted
   define _STRIP_RPATH_FILES
     while read f; do \
-	keep=$$($(OBJDUMP) -p "$$f" 2>/dev/null | \
-	        perl -ne 'next unless ($$r)=/^\s*R(?:UN)?PATH\s+(.*?)\s*$$/; $$,=":"; print grep /./, grep !/\$$ORIGIN/, split(":",$$r)'); \
+	keep=$$(chrpath -l "$$f" 2>/dev/null | \
+	        perl -ne 'next unless ($$r)=/: R(?:UN)?PATH=(.*?)\s*$$/; $$,=":"; print grep /./, grep !/\$$ORIGIN/, split(":",$$r)'); \
 	if test -n "$$keep"; then chrpath -r "$$keep" "$$f"; else chrpath -d "$$f"; fi 2>/dev/null || true; \
     done;
   endef
