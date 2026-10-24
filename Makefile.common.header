@@ -109,10 +109,6 @@ $1.$$(SO) $$(call MRBUILD_LIBSO_ABI,$1): $$(call MRBUILD_LIBSO_FULL,$1)
 # Here instead of specifying $^, I do just the %.o parts and then the
 # others. This is required to make the linker happy to see the dependent
 # objects first and the dependency objects last. Same as for BIN_TARGETS
-#
-# _LDFLAGS_LIB goes in the recipe, not in a target-specific LDFLAGS, so that a
-# library this one depends on doesn't inherit it. "private" would do that too,
-# but it needs GNU make 3.82, and macOS ships 3.81
 $$(call MRBUILD_LIBSO_FULL,$1): $$(addsuffix .o,$$(basename $2))
 	$$(CC_LINKER) $$(LDFLAGS) $$(_LDFLAGS_LIB) $$(filter %.o, $$^) $$(filter-out %.o, $$^) $$(LDLIBS) -o $$@
 
