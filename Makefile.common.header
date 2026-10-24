@@ -27,16 +27,21 @@
 # osx
 COND_DARWIN := $(filter Darwin,$(shell uname -s))
 
-### For cross-building on Debian. If these tools aren't already defined, I
-### define them. This will work on Debian when building natively OR
-### cross-building. It will also work on any other non-arch for native builds
-# Function to evaluate ALL the _DEB_... architecture variables
-DPKG_ARCHITECTURE_EVAL = $(foreach v,$(shell dpkg-architecture 2>/dev/null),$(eval _$v))
-# Memoize DEB_HOST_... variables; dpkg-architecture will be called only if
-# needed, at most once
-DEB_HOST_GNU_TYPE   = $(if $(_DEB_HOST_GNU_TYPE),,$(strip $(DPKG_ARCHITECTURE_EVAL)))$(_DEB_HOST_GNU_TYPE)
-DEB_HOST_MULTIARCH  = $(if $(_DEB_HOST_MULTIARCH),,$(strip $(DPKG_ARCHITECTURE_EVAL)))$(_DEB_HOST_MULTIARCH)
-DEB_BUILD_MULTIARCH = $(if $(_DEB_BUILD_MULTIARCH),,$(strip $(DPKG_ARCHITECTURE_EVAL)))$(_DEB_BUILD_MULTIARCH)
+# if the DEB_... architecture variables are defined already in the environment
+# (as "dpkg-buildpackage -a" does), just use those. Otherwise query
+# dpkg-architcture
+ifeq ($(origin DEB_HOST_GNU_TYPE),undefined)
+  ### For cross-building on Debian. If these tools aren't already defined, I
+  ### define them. This will work on Debian when building natively OR
+  ### cross-building. It will also work on any other non-arch for native builds
+  # Function to evaluate ALL the _DEB_... architecture variables
+  DPKG_ARCHITECTURE_EVAL = $(foreach v,$(shell dpkg-architecture 2>/dev/null),$(eval _$v))
+  # Memoize DEB_HOST_... variables; dpkg-architecture will be called only if
+  # needed, at most once
+  DEB_HOST_GNU_TYPE   = $(if $(_DEB_HOST_GNU_TYPE),,$(strip $(DPKG_ARCHITECTURE_EVAL)))$(_DEB_HOST_GNU_TYPE)
+  DEB_HOST_MULTIARCH  = $(if $(_DEB_HOST_MULTIARCH),,$(strip $(DPKG_ARCHITECTURE_EVAL)))$(_DEB_HOST_MULTIARCH)
+  DEB_BUILD_MULTIARCH = $(if $(_DEB_BUILD_MULTIARCH),,$(strip $(DPKG_ARCHITECTURE_EVAL)))$(_DEB_BUILD_MULTIARCH)
+endif
 
 _CROSS_BUILDING := $(filter-out $(DEB_BUILD_MULTIARCH),$(DEB_HOST_MULTIARCH))
 
