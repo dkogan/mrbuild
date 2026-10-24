@@ -50,8 +50,12 @@ PKG_CONFIG     ?= $(TOOL_ARCH_PREFIX)pkg-config
 NM             ?= $(TOOL_ARCH_PREFIX)nm
 OBJCOPY        ?= $(TOOL_ARCH_PREFIX)objcopy
 OBJDUMP        ?= $(TOOL_ARCH_PREFIX)objdump
-CC             ?= $(TOOL_ARCH_PREFIX)gcc
-CXX            ?= $(TOOL_ARCH_PREFIX)g++
+ifneq ($(filter default undefined,$(origin CC)),)
+  CC = $(TOOL_ARCH_PREFIX)gcc
+endif
+ifneq ($(filter default undefined,$(origin CXX)),)
+  CXX = $(TOOL_ARCH_PREFIX)g++
+endif
 
 # Hacks to get spaces and newlines in places where Make would normally parse
 # them out
